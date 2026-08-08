@@ -33,6 +33,16 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: >-
+            platform-tools
+            build-tools;35.0.1
+            platforms;android-35
+            cmake;3.10.2.4988404
+            ndk;28.1.13356709
+
       - name: Cache Godot downloads
         uses: actions/cache@v4
         with:
@@ -48,19 +58,6 @@ jobs:
           key: ${{ runner.os }}-gradle-godot-${{ env.GODOT_RELEASE }}-${{ hashFiles('project.godot', 'export_presets.cfg') }}
           restore-keys: |
             ${{ runner.os }}-gradle-godot-${{ env.GODOT_RELEASE }}-
-
-      - name: Install Android SDK packages
-        shell: bash
-        run: |
-          set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager \
-            "platform-tools" \
-            "build-tools;35.0.1" \
-            "platforms;android-35" \
-            "cmdline-tools;latest" \
-            "cmake;3.10.2.4988404" \
-            "ndk;28.1.13356709"
 
       - name: Download Godot and OpenXR Vendors
         shell: bash
