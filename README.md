@@ -272,6 +272,31 @@ Godotの `Java SDK Path` がJDK 17を指しているか確認してください�
 
 AndroidとXR exportの詳細は [Exporting for Android](https://docs.godotengine.org/en/4.6/tutorials/export/exporting_for_android.html) と [Deploying to Android](https://docs.godotengine.org/en/4.6/tutorials/xr/deploying_to_android.html) を参照してください。
 
+## GitHub ActionsでPRのAPKをビルド
+
+`main`向けのPull Requestを作成または更新すると、[`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml) がDebug APKを自動ビルドします。Unity参考リポジトリと同様に、ビルド結果はGitHub Actionsのartifactとして保存されます。
+
+CIでは次の環境を毎回再現します。
+
+- Godot `4.6.3-stable`
+- OpenJDK 17
+- Android SDK Platform 35 / Build-Tools 35.0.1
+- Godot Android Export Templates 4.6.3
+- OpenXR Vendors plugin `5.1.0-stable`
+- `Meta Quest 3` Debug export preset
+
+PRのAPKを取得する手順です。
+
+1. GitHubで `main` 向けのPull Requestを作成します。
+2. PRのChecksまたはActionsタブで `Build Quest 3 Debug APK` の完了を待ちます。
+3. 完了したworkflow runを開きます。
+4. ページ下部の `Artifacts` から `quest-mr-template-pr-<PR番号>` をダウンロードします。
+5. ZIPを展開すると `quest-mr-template.apk` が入っています。
+
+artifactの保存期間は14日です。PRへ新しいcommitをpushすると古い実行はキャンセルされ、最新commitで再ビルドされます。Actions画面の `Run workflow` から手動実行することもできます。
+
+このworkflowはDebug APK専用です。署名用Secretsを使用しないため、Meta Horizon Storeへ提出するRelease APK/AABは生成しません。
+
 ## デスクトップfallback
 
 PCにOpenXR runtime/HMDがない場合、またはAlpha blendが使えない場合はXR出力を有効にせず、暗い背景上に同じキューブを通常の3Dカメラで表示します。`xr/openxr/startup_alert=false` により、OpenXR初期化失敗時もモーダル警告を出しません。
