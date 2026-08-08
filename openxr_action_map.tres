@@ -1,4 +1,4 @@
-[gd_resource type="OpenXRActionMap" load_steps=9 format=3]
+[gd_resource type="OpenXRActionMap" load_steps=12 format=3]
 
 [sub_resource type="OpenXRAction" id="OpenXRAction_default_pose"]
 resource_name = "default_pose"
@@ -35,7 +35,18 @@ binding_path = "/user/hand/right/input/aim/pose"
 interaction_profile_path = "/interaction_profiles/oculus/touch_controller"
 bindings = [SubResource("OpenXRIPBinding_touch_left"), SubResource("OpenXRIPBinding_touch_right")]
 
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_pico4_left"]
+action = SubResource("OpenXRAction_default_pose")
+binding_path = "/user/hand/left/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_pico4_right"]
+action = SubResource("OpenXRAction_default_pose")
+binding_path = "/user/hand/right/input/aim/pose"
+
+[sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_pico4"]
+interaction_profile_path = "/interaction_profiles/bytedance/pico4_controller"
+bindings = [SubResource("OpenXRIPBinding_pico4_left"), SubResource("OpenXRIPBinding_pico4_right")]
+
 [resource]
 action_sets = [SubResource("OpenXRActionSet_main")]
-interaction_profiles = [SubResource("OpenXRInteractionProfile_simple"), SubResource("OpenXRInteractionProfile_touch")]
-
+interaction_profiles = [SubResource("OpenXRInteractionProfile_simple"), SubResource("OpenXRInteractionProfile_touch"), SubResource("OpenXRInteractionProfile_pico4")]

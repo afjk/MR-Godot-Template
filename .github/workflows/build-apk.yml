@@ -1,4 +1,4 @@
-name: Build Quest 3 Debug APK
+name: Build Android XR Debug APKs
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: quest-apk-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: android-xr-apk-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -19,9 +19,19 @@ env:
 
 jobs:
   build-apk:
-    name: Build Android Debug APK
+    name: Build ${{ matrix.preset }} Debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: Meta Quest 3
+            apk: quest-mr-template.apk
+            artifact: quest-mr-template
+          - preset: PICO 4 Ultra
+            apk: pico4-ultra-mr-template.apk
+            artifact: pico4-ultra-mr-template
 
     steps:
       - name: Checkout repository
@@ -130,23 +140,26 @@ jobs:
 
           test -f addons/godotopenxrvendors/plugin.gdextension
 
-      - name: Build Quest 3 Debug APK
+      - name: Build ${{ matrix.preset }} Debug APK
         shell: bash
+        env:
+          EXPORT_PRESET: ${{ matrix.preset }}
+          OUTPUT_APK: build/${{ matrix.apk }}
         run: |
           set -euo pipefail
           mkdir -p build
 
           "$GODOT_BIN" --headless --path . \
             --install-android-build-template \
-            --export-debug "Meta Quest 3" \
-            build/quest-mr-template.apk
+            --export-debug "$EXPORT_PRESET" \
+            "$OUTPUT_APK"
 
-          test -s build/quest-mr-template.apk
+          test -s "$OUTPUT_APK"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: quest-mr-template-pr-${{ github.event.pull_request.number || github.run_number }}
-          path: build/quest-mr-template.apk
+          name: ${{ matrix.artifact }}-pr-${{ github.event.pull_request.number || github.run_number }}
+          path: build/${{ matrix.apk }}
           if-no-files-found: error
           retention-days: 14

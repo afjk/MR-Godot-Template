@@ -6,6 +6,8 @@
 /build/
 *.apk
 *.aab
+*.apks
+*.idsig
 
 # Downloaded project dependencies
 /addons/godotopenxrvendors/

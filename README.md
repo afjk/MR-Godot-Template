@@ -1,6 +1,6 @@
-# Quest MR Godot Template
+# Quest / PICO MR Godot Template
 
-Meta Quest 3向けの最小Mixed Reality（MR）テンプレートです。Godot 4.6、Compatibility renderer、OpenXRを前提にしています。
+Meta Quest 3とPICO 4 Ultra向けの最小Mixed Reality（MR）テンプレートです。Godot 4.6、Compatibility renderer、OpenXRを前提にしています。
 
 外部アセット、Godot XR Tools、移動、掴み、UI、scene understanding、anchorsは含みません。参考にしたUnity版は [Meta Quest MR Unity Template](https://github.com/afjk/Meta-Quest-MR-Unity-Template) です。
 
@@ -9,7 +9,7 @@ Meta Quest 3向けの最小Mixed Reality（MR）テンプレートです。Godot
 - OpenXRの起動状態とAlpha environment blend対応を確認してMRを開始
 - Godot 4.3以降で推奨される `XRInterface.environment_blend_mode` APIでパススルーを要求
 - `XROrigin3D`、`XRCamera3D`、左右の `XRController3D`
-- Quest 3の光学式Hand Trackingとコントローラー推定Hand Tracking
+- Quest 3とPICO 4 Ultraの光学式Hand Tracking、およびコントローラー推定Hand Tracking
 - `XRHandTracker`が返す左右26関節の軽量な球表示
 - 前方の回転キューブと、追跡中だけ表示する小さなコントローラーマーカー
 - 実世界を覆う不透明な床なし
@@ -17,7 +17,7 @@ Meta Quest 3向けの最小Mixed Reality（MR）テンプレートです。Godot
 
 ## ビルド手順
 
-以下は、開発用のDebug APKを作り、Quest 3へインストールするまでの手順です。GodotやAndroid開発が初めてでも、上から順番に進めればビルドできます。
+以下は、開発用のDebug APKを作り、Quest 3またはPICO 4 Ultraへインストールするまでの共通手順です。GodotやAndroid開発が初めてでも、上から順番に進めればビルドできます。
 
 ### 1. リポジトリを取得
 
@@ -91,7 +91,7 @@ Android SDKの一般的な場所は次のとおりです。
 
 ### 6. OpenXR Vendors pluginをインストール
 
-QuestのパススルーとMeta固有のExport設定には公式のGodot OpenXR Vendors pluginを使います。大容量の配布バイナリなので、このリポジトリにはコミットしていません。
+QuestとPICOのAndroid OpenXR loader、パススルー、ベンダー固有のExport設定には公式のGodot OpenXR Vendors pluginを使います。大容量の配布バイナリなので、このリポジトリにはコミットしていません。
 
 #### Godot AssetLibから入れる方法
 
@@ -227,6 +227,70 @@ adb install build/quest-mr-template.apk
 
 光学式Hand Trackingを確認するときはQuest側のHand Trackingを有効にし、Touch Controllerを置いて、両手をヘッドセットのカメラから見える位置へ出してください。
 
+## PICO 4 Ultra向けビルド
+
+GodotとAndroid SDKの導入、OpenXR Vendors plugin、Android Gradle Build Templateまでは上記の手順2から7と共通です。同じプロジェクトを使用しますが、Godot OpenXR Vendorsの仕様に従い、MetaとPICOを同じExport presetでは同時に有効化していません。
+
+### 1. PICO 4 UltraのOSを更新
+
+ヘッドセットのシステムアップデートを実行し、利用可能な最新のPICO OSへ更新してください。PICO公式資料ではHand Trackingはシステムバージョン`5.11.0`以降、PICO 4 UltraのVideo See-Throughは`5.14.0`以降が要件です。
+
+- [PICO Hand Tracking](https://developer.picoxr.com/home-api/document/unity/hand-tracking/)
+- [PICO Video See-Through](https://developer.picoxr.com/en/document/unity/seethrough/)
+
+### 2. PICO用Export設定を確認
+
+`Project > Export`を開き、`PICO 4 Ultra` presetを選択します。次の値になっていることを確認してください。
+
+- `Use Gradle Build`: 有効
+- `Architectures > Arm 64 -v 8a`: 有効
+- その他のArchitecture: 無効
+- `XR Mode`: `OpenXR`
+- `OpenXR Vendors > Meta`: 無効
+- `OpenXR Vendors > PICO`: 有効
+- `PICO XR Features > Hand Tracking`: `Optional`
+- `PICO XR Features > Face Tracking`: `None`
+
+このプロジェクトは標準OpenXRのAlpha environment blendと`XR_EXT_hand_tracking`を使用します。`project.godot`に残っている`xr/openxr/extensions/meta/passthrough`という設定名は、OpenXR Vendors pluginがPICOでも利用する`XR_FB_passthrough` fallbackを有効にするために必要です。PICO runtimeがネイティブAlpha blendを提供する場合はruntime側が優先されます。
+
+### 3. PICO用APKをビルド
+
+GodotのExport画面で`PICO 4 Ultra`を選び、`Export Project`からDebug APKを出力します。コマンドラインでは次のようにビルドできます。
+
+```bash
+godot --headless --path . \
+  --install-android-build-template \
+  --export-debug "PICO 4 Ultra" \
+  build/pico4-ultra-mr-template.apk
+```
+
+Android Build Templateをすでにインストール済みの場合は、`--install-android-build-template`を省略できます。成功すると`build/pico4-ultra-mr-template.apk`が作成されます。
+
+### 4. Developer ModeとUSB debuggingを有効化
+
+PICO 4 Ultra側でDeveloper ModeとUSB debuggingを有効にし、データ通信対応のUSBケーブルでPCへ接続します。ヘッドセット内にUSB debuggingの許可が表示されたら承認してください。
+
+```bash
+adb devices
+```
+
+端末の状態が`device`なら接続済みです。`unauthorized`の場合は、ヘッドセット内の確認ダイアログを承認します。
+
+### 5. PICO 4 Ultraへインストール
+
+```bash
+adb install -r build/pico4-ultra-mr-template.apk
+```
+
+署名が異なる古いDebug APKとの競合で`INSTALL_FAILED_UPDATE_INCOMPATIBLE`になる場合だけ、保存データが消えることを確認したうえで削除して入れ直します。
+
+```bash
+adb uninstall com.example.pico4ultramrgodottemplate
+adb install build/pico4-ultra-mr-template.apk
+```
+
+起動後はパススルー背景、正面の回転キューブ、左右コントローラーマーカー、Hand Tracking時の左右26関節を確認してください。コントローラー姿勢にはOpenXR 1.1の`/interaction_profiles/bytedance/pico4_controller`を使用します。
+
 ## トラブルシューティング
 
 ### `No export template found`と表示される
@@ -266,6 +330,14 @@ Godotの `Java SDK Path` がJDK 17を指しているか確認してください�
 - 明るい場所で、手をヘッドセット前面カメラから見える位置へ出す
 - Export presetのHand Trackingが`Optional`または`Required`になっているか確認する
 
+### PICO 4 UltraでパススルーまたはHand Trackingが動かない
+
+- PICO OSを最新へ更新する
+- `PICO 4 Ultra` presetでPICO pluginだけが有効か確認する
+- PICO本体のHand Trackingを有効にし、コントローラーを置く
+- アプリ起動時に表示される権限を許可する
+- OpenXR Vendors pluginが`5.1.0-stable`であることを確認する
+
 ### `No project icon specified`という警告が出る
 
 現時点ではプロジェクトアイコンを同梱していないため表示されます。Debug APKのビルド自体には影響しません。
@@ -274,7 +346,7 @@ AndroidとXR exportの詳細は [Exporting for Android](https://docs.godotengine
 
 ## GitHub ActionsでPRのAPKをビルド
 
-`main`向けのPull Requestを作成または更新すると、[`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml) がDebug APKを自動ビルドします。Unity参考リポジトリと同様に、ビルド結果はGitHub Actionsのartifactとして保存されます。
+`main`向けのPull Requestを作成または更新すると、[`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml) がQuest 3用とPICO 4 Ultra用のDebug APKをmatrixで並列ビルドします。Unity参考リポジトリと同様に、ビルド結果はGitHub Actionsのartifactとして個別に保存されます。
 
 CIでは次の環境を毎回再現します。
 
@@ -283,15 +355,15 @@ CIでは次の環境を毎回再現します。
 - Android SDK Platform 35 / Build-Tools 35.0.1
 - Godot Android Export Templates 4.6.3
 - OpenXR Vendors plugin `5.1.0-stable`
-- `Meta Quest 3` Debug export preset
+- `Meta Quest 3`と`PICO 4 Ultra`のDebug export preset
 
 PRのAPKを取得する手順です。
 
 1. GitHubで `main` 向けのPull Requestを作成します。
-2. PRのChecksまたはActionsタブで `Build Quest 3 Debug APK` の完了を待ちます。
+2. PRのChecksまたはActionsタブで、`Meta Quest 3`と`PICO 4 Ultra`の両方のDebug APK build完了を待ちます。
 3. 完了したworkflow runを開きます。
-4. ページ下部の `Artifacts` から `quest-mr-template-pr-<PR番号>` をダウンロードします。
-5. ZIPを展開すると `quest-mr-template.apk` が入っています。
+4. ページ下部の`Artifacts`から必要なartifactをダウンロードします。
+5. Quest用は`quest-mr-template-pr-<PR番号>`、PICO用は`pico4-ultra-mr-template-pr-<PR番号>`です。
 
 artifactの保存期間は14日です。PRへ新しいcommitをpushすると古い実行はキャンセルされ、最新commitで再ビルドされます。Actions画面の `Run workflow` から手動実行することもできます。
 
@@ -306,18 +378,18 @@ PCにOpenXR runtime/HMDがない場合、またはAlpha blendが使えない場�
 ```text
 project.godot                 Godot 4.6 / Compatibility / OpenXR設定
 export_presets.cfg            Android arm64 / OpenXRの最小preset
-openxr_action_map.tres        左右コントローラーのdefault pose
+openxr_action_map.tres        Quest/PICO左右コントローラーのdefault pose
 scenes/main.tscn              XR rig、環境、最小デモ
 scripts/main.gd               OpenXR、MR、fallback初期化
-addons/godotopenxrvendors/    Meta Quest向けOpenXR Vendors plugin
+addons/godotopenxrvendors/    Meta/PICO向けOpenXR Vendors plugin
 ```
 
 ## 既知の制約
 
-- パススルー映像はMeta/OpenXR runtimeが合成します。アプリからカメラ画像のピクセルやテクスチャ自体へはアクセスできません。
+- パススルー映像はMetaまたはPICOのOpenXR runtimeが合成します。アプリからカメラ画像のピクセルやテクスチャ自体へはアクセスできません。
 - 空間メッシュ、平面検出、anchorsは実装していません。
 - Hand Trackingは関節データの取得とデバッグ表示のみです。スキニング済みハンドモデルやジェスチャー操作は含みません。
-- MRにはOpenXR Vendors pluginと、Export preset側のMeta Quest/Passthrough設定が必要です。
+- MRにはOpenXR Vendors pluginと、対象端末専用のExport presetが必要です。MetaとPICOのvendor pluginを同じpresetで同時に有効化しないでください。
 - 実機の対応blend modeを実行時に確認し、Alpha blend非対応ならMRを開始しません。
 
 ## 公式ドキュメント
@@ -326,3 +398,5 @@ addons/godotopenxrvendors/    Meta Quest向けOpenXR Vendors plugin
 - [OpenXR settings](https://docs.godotengine.org/en/4.6/tutorials/xr/openxr_settings.html)
 - [AR / Passthrough](https://docs.godotengine.org/en/4.6/tutorials/xr/ar_passthrough.html)
 - [OpenXR hand tracking](https://docs.godotengine.org/en/4.6/tutorials/xr/openxr_hand_tracking.html)
+- [Godot OpenXR Vendors installation](https://godotvr.github.io/godot_openxr_vendors/getting-started/installation.html)
+- [OpenXR PICO 4 controller profile](https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#_bytedance_pico_4_controller_profile)
