@@ -4,6 +4,14 @@ extends Node3D
 @onready var environment: Environment = $WorldEnvironment.environment
 @onready var demo_cube: MeshInstance3D = $Demo/Cube
 @onready var xr_origin: XROrigin3D = $XROrigin3D
+@onready var aim_controllers: Array[XRController3D] = [
+	$XROrigin3D/LeftController,
+	$XROrigin3D/RightController,
+]
+@onready var grip_controllers: Array[XRController3D] = [
+	$XROrigin3D/LeftGripController,
+	$XROrigin3D/RightGripController,
+]
 
 var xr_interface: XRInterface
 var hand_joint_markers: Array = []
@@ -42,6 +50,7 @@ func _process(delta: float) -> void:
 	demo_cube.rotate_y(delta * 0.55)
 	demo_cube.rotate_x(delta * 0.18)
 	_update_hand_joint_markers()
+	_update_controller_visuals()
 
 
 func _create_hand_joint_markers() -> void:
@@ -74,7 +83,7 @@ func _update_hand_joint_markers() -> void:
 	for hand_index in HAND_TRACKER_PATHS.size():
 		var tracker := XRServer.get_tracker(HAND_TRACKER_PATHS[hand_index]) as XRHandTracker
 		var markers: Array = hand_joint_markers[hand_index]
-		if tracker == null or not tracker.has_tracking_data:
+		if not _is_hand_tracking_active(tracker):
 			for marker: MeshInstance3D in markers:
 				marker.visible = false
 			continue
@@ -87,6 +96,30 @@ func _update_hand_joint_markers() -> void:
 				marker.position = tracker.get_hand_joint_transform(joint).origin
 				var radius := maxf(tracker.get_hand_joint_radius(joint), JOINT_MARKER_RADIUS)
 				marker.scale = Vector3.ONE * (radius / JOINT_MARKER_RADIUS)
+
+
+func _update_controller_visuals() -> void:
+	if not viewport.use_xr:
+		return
+
+	for hand_index in HAND_TRACKER_PATHS.size():
+		var hand_tracker := XRServer.get_tracker(HAND_TRACKER_PATHS[hand_index]) as XRHandTracker
+		var hand_tracking_active := _is_hand_tracking_active(hand_tracker)
+		var aim_controller := aim_controllers[hand_index]
+		var grip_controller := grip_controllers[hand_index]
+
+		aim_controller.visible = aim_controller.get_is_active() and not hand_tracking_active
+		grip_controller.visible = grip_controller.get_is_active() and not hand_tracking_active
+
+
+func _is_hand_tracking_active(tracker: XRHandTracker) -> bool:
+	if tracker == null or not tracker.has_tracking_data:
+		return false
+
+	return tracker.hand_tracking_source not in [
+		XRHandTracker.HAND_TRACKING_SOURCE_CONTROLLER,
+		XRHandTracker.HAND_TRACKING_SOURCE_NOT_TRACKED,
+	]
 
 
 func _configure_transparent_environment() -> void:
