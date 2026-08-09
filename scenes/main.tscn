@@ -88,7 +88,6 @@ pose = &"grip"
 show_when_tracked = false
 
 [node name="ControllerModel" parent="XROrigin3D/LeftGripController" instance=ExtResource("2_controller_model")]
-rotation_degrees = Vector3(0, -8, 0)
 
 [node name="RightGripController" type="XRController3D" parent="XROrigin3D"]
 visible = false
@@ -98,7 +97,6 @@ pose = &"grip"
 show_when_tracked = false
 
 [node name="ControllerModel" parent="XROrigin3D/RightGripController" instance=ExtResource("2_controller_model")]
-rotation_degrees = Vector3(0, 8, 0)
 hand = 1
 
 [node name="Demo" type="Node3D" parent="."]
