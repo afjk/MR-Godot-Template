@@ -3,40 +3,40 @@
 [ext_resource type="Script" path="res://scripts/simple_controller_model.gd" id="1_model"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_handle"]
-radius = 0.026
-height = 0.12
+radius = 0.018
+height = 0.1
 radial_segments = 12
 rings = 4
 
 [sub_resource type="BoxMesh" id="BoxMesh_body"]
-size = Vector3(0.075, 0.026, 0.09)
+size = Vector3(0.058, 0.02, 0.062)
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_thumb_pad"]
-top_radius = 0.018
-bottom_radius = 0.018
-height = 0.008
+top_radius = 0.014
+bottom_radius = 0.014
+height = 0.006
 radial_segments = 12
 
 [sub_resource type="BoxMesh" id="BoxMesh_trigger"]
-size = Vector3(0.024, 0.018, 0.018)
+size = Vector3(0.018, 0.014, 0.016)
 
 [node name="SimpleControllerModel" type="Node3D"]
 script = ExtResource("1_model")
 
 [node name="Handle" type="MeshInstance3D" parent="."]
-position = Vector3(0, -0.035, 0.018)
-rotation_degrees = Vector3(12, 0, 0)
+position = Vector3(0, -0.036, 0.008)
+rotation_degrees = Vector3(8, 0, 0)
 mesh = SubResource("CapsuleMesh_handle")
 
 [node name="Body" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.026, -0.015)
+position = Vector3(0, 0.018, -0.014)
 mesh = SubResource("BoxMesh_body")
 
 [node name="ThumbPad" type="MeshInstance3D" parent="."]
-position = Vector3(-0.014, 0.043, -0.032)
+position = Vector3(-0.01, 0.047, -0.031)
 mesh = SubResource("CylinderMesh_thumb_pad")
 
 [node name="Trigger" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.006, -0.064)
-rotation_degrees = Vector3(20, 0, 0)
+position = Vector3(0, 0.004, -0.047)
+rotation_degrees = Vector3(16, 0, 0)
 mesh = SubResource("BoxMesh_trigger")
