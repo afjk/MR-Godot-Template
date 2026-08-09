@@ -1,8 +1,7 @@
 name: Build Android XR Debug APKs
 
 on:
-  pull_request:
-    branches: [main]
+  pull_request: {}
   workflow_dispatch:
 
 permissions:
@@ -32,6 +31,9 @@ jobs:
           - preset: PICO 4 Ultra
             apk: pico4-ultra-mr-template.apk
             artifact: pico4-ultra-mr-template
+          - preset: VIVE Focus Vision
+            apk: vive-focus-vision-mr-template.apk
+            artifact: vive-focus-vision-mr-template
 
     steps:
       - name: Checkout repository
