@@ -49,8 +49,8 @@ current = true
 [node name="LeftController" type="XRController3D" parent="XROrigin3D"]
 visible = false
 position = Vector3(-0.25, 1.25, -0.55)
-tracker = &"/user/hand/left"
-pose = &"default_pose"
+tracker = &"left_hand"
+pose = &"aim"
 show_when_tracked = false
 
 [node name="AimRay" type="MeshInstance3D" parent="XROrigin3D/LeftController"]
@@ -66,8 +66,8 @@ enabled = true
 [node name="RightController" type="XRController3D" parent="XROrigin3D"]
 visible = false
 position = Vector3(0.25, 1.25, -0.55)
-tracker = &"/user/hand/right"
-pose = &"default_pose"
+tracker = &"right_hand"
+pose = &"aim"
 show_when_tracked = false
 
 [node name="AimRay" type="MeshInstance3D" parent="XROrigin3D/RightController"]
@@ -83,8 +83,8 @@ enabled = true
 [node name="LeftGripController" type="XRController3D" parent="XROrigin3D"]
 visible = false
 position = Vector3(-0.25, 1.25, -0.55)
-tracker = &"/user/hand/left"
-pose = &"grip_pose"
+tracker = &"left_hand"
+pose = &"grip"
 show_when_tracked = false
 
 [node name="ControllerModel" parent="XROrigin3D/LeftGripController" instance=ExtResource("2_controller_model")]
@@ -92,8 +92,8 @@ show_when_tracked = false
 [node name="RightGripController" type="XRController3D" parent="XROrigin3D"]
 visible = false
 position = Vector3(0.25, 1.25, -0.55)
-tracker = &"/user/hand/right"
-pose = &"grip_pose"
+tracker = &"right_hand"
+pose = &"grip"
 show_when_tracked = false
 
 [node name="ControllerModel" parent="XROrigin3D/RightGripController" instance=ExtResource("2_controller_model")]

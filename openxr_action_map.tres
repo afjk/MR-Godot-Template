@@ -1,8 +1,8 @@
 [gd_resource type="OpenXRActionMap" load_steps=24 format=3]
 
 [sub_resource type="OpenXRAction" id="OpenXRAction_default_pose"]
-resource_name = "default_pose"
-localized_name = "Default pose"
+resource_name = "aim_pose"
+localized_name = "Aim pose"
 action_type = 3
 toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
 
