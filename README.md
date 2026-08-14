@@ -619,8 +619,13 @@ export_presets.cfg            Android arm64 / OpenXRの最小preset
 openxr_action_map.tres        Quest/PICO/VIVE左右コントローラーのaim/grip pose
 scenes/main.tscn              XR rig、環境、最小デモ
 scripts/main.gd               OpenXR、MR、fallback初期化
+docs/mr_toolkit_design.md     MRTK相当のインタラクション基盤の検討メモ
 addons/godotopenxrvendors/    Meta/PICO/VIVE向けOpenXR Vendors plugin
 ```
+
+## 今後の拡張の検討
+
+このテンプレートの次の層として、MRTK3相当のインタラクション基盤（近接・遠隔のポインタ、押せるボタン、掴んで動かす操作、追従メニュー）を検討しています。方針と段階の案は[docs/mr_toolkit_design.md](docs/mr_toolkit_design.md)にまとめています。実装はまだ入っていません。
 
 ## 既知の制約
 
