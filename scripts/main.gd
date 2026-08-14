@@ -1,5 +1,34 @@
 extends Node3D
 
+## Emitted when the user takes the headset off or the runtime moves the app to the background.
+signal focus_lost
+## Emitted when the app regains XR focus.
+signal focus_gained
+## Emitted when the runtime recenters the player pose.
+signal pose_recentered
+
+const HAND_TRACKER_PATHS: Array[StringName] = [
+	&"/user/hand_tracker/left",
+	&"/user/hand_tracker/right",
+]
+const HAND_COLORS: Array[Color] = [
+	Color(0.05, 0.62, 1.0, 1.0),
+	Color(1.0, 0.18, 0.12, 1.0),
+]
+const JOINT_MARKER_RADIUS := 0.006
+## Sources that mean the runtime is not reporting optically tracked hands.
+const INACTIVE_HAND_SOURCES: Array[int] = [
+	XRHandTracker.HAND_TRACKING_SOURCE_CONTROLLER,
+	XRHandTracker.HAND_TRACKING_SOURCE_NOT_TRACKED,
+]
+
+## Highest display refresh rate to request from the XR runtime.
+@export var maximum_refresh_rate := 90
+
+var xr_interface: OpenXRInterface
+var xr_is_focussed := false
+var hand_joint_markers: Array = []
+
 @onready var viewport: Viewport = get_viewport()
 @onready var environment: Environment = $WorldEnvironment.environment
 @onready var demo_cube: MeshInstance3D = $Demo/Cube
@@ -13,22 +42,9 @@ extends Node3D
 	$XROrigin3D/RightGripController,
 ]
 
-var xr_interface: XRInterface
-var hand_joint_markers: Array = []
-
-const HAND_TRACKER_PATHS: Array[StringName] = [
-	&"/user/hand_tracker/left",
-	&"/user/hand_tracker/right",
-]
-const HAND_COLORS: Array[Color] = [
-	Color(0.05, 0.62, 1.0, 1.0),
-	Color(1.0, 0.18, 0.12, 1.0),
-]
-const JOINT_MARKER_RADIUS := 0.006
-
 
 func _ready() -> void:
-	xr_interface = XRServer.find_interface("OpenXR")
+	xr_interface = XRServer.find_interface("OpenXR") as OpenXRInterface
 	if xr_interface == null or not xr_interface.is_initialized():
 		_enable_desktop_fallback("OpenXR is not initialized")
 		return
@@ -42,6 +58,8 @@ func _ready() -> void:
 	_configure_transparent_environment()
 	viewport.use_xr = true
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	_configure_foveation()
+	_connect_openxr_signals()
 	_create_hand_joint_markers()
 	print("OpenXR MR initialized with Alpha environment blend")
 
@@ -51,6 +69,81 @@ func _process(delta: float) -> void:
 	demo_cube.rotate_x(delta * 0.18)
 	_update_hand_joint_markers()
 	_update_controller_visuals()
+
+
+func _configure_foveation() -> void:
+	# Forward+ and Mobile drive foveation through the rendering device as VRS.
+	# The Compatibility renderer used by this template has no rendering device,
+	# so it relies on the OpenXR foveation project settings instead.
+	if RenderingServer.get_rendering_device() != null:
+		viewport.vrs_mode = Viewport.VRS_XR
+	elif int(ProjectSettings.get_setting("xr/openxr/foveation_level", 0)) == 0:
+		push_warning("OpenXR: set xr/openxr/foveation_level to High for standalone headsets.")
+
+
+func _connect_openxr_signals() -> void:
+	xr_interface.session_begun.connect(_on_openxr_session_begun)
+	xr_interface.session_visible.connect(_on_openxr_visible_state)
+	xr_interface.session_focussed.connect(_on_openxr_focused_state)
+	xr_interface.session_stopping.connect(_on_openxr_session_stopping)
+	xr_interface.pose_recentered.connect(_on_openxr_pose_recentered)
+
+
+func _on_openxr_session_begun() -> void:
+	var current_rate := xr_interface.get_display_refresh_rate()
+	if current_rate > 0.0:
+		print("OpenXR: runtime reports a refresh rate of %s" % current_rate)
+	else:
+		print("OpenXR: runtime did not report a refresh rate")
+
+	# Pick the highest rate the runtime offers that we are willing to render at.
+	var best_rate := current_rate
+	var available_rates := xr_interface.get_available_display_refresh_rates()
+	if available_rates.is_empty():
+		print("OpenXR: display refresh rate extension is not available")
+	else:
+		for entry in available_rates:
+			var rate := float(entry)
+			if rate > best_rate and rate <= maximum_refresh_rate:
+				best_rate = rate
+
+	if best_rate > 0.0 and not is_equal_approx(current_rate, best_rate):
+		print("OpenXR: setting refresh rate to %s" % best_rate)
+		xr_interface.set_display_refresh_rate(best_rate)
+		current_rate = best_rate
+
+	# Match the physics rate to the display so tracked poses land on frame boundaries.
+	if current_rate > 0.0:
+		Engine.physics_ticks_per_second = int(roundf(current_rate))
+
+
+func _on_openxr_visible_state() -> void:
+	# Startup also passes through this state; only a later visit means the user
+	# took the headset off or the app moved to the background.
+	if not xr_is_focussed:
+		return
+
+	print("OpenXR lost focus")
+	xr_is_focussed = false
+	process_mode = Node.PROCESS_MODE_DISABLED
+	focus_lost.emit()
+
+
+func _on_openxr_focused_state() -> void:
+	print("OpenXR gained focus")
+	xr_is_focussed = true
+	process_mode = Node.PROCESS_MODE_INHERIT
+	focus_gained.emit()
+
+
+func _on_openxr_session_stopping() -> void:
+	print("OpenXR session is stopping")
+
+
+func _on_openxr_pose_recentered() -> void:
+	# Reacting to a recenter is application specific; forward it so scenes built
+	# on this template can reposition their content.
+	pose_recentered.emit()
 
 
 func _create_hand_joint_markers() -> void:
@@ -116,10 +209,7 @@ func _is_hand_tracking_active(tracker: XRHandTracker) -> bool:
 	if tracker == null or not tracker.has_tracking_data:
 		return false
 
-	return tracker.hand_tracking_source not in [
-		XRHandTracker.HAND_TRACKING_SOURCE_CONTROLLER,
-		XRHandTracker.HAND_TRACKING_SOURCE_NOT_TRACKED,
-	]
+	return tracker.hand_tracking_source not in INACTIVE_HAND_SOURCES
 
 
 func _configure_transparent_environment() -> void:
