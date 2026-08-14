@@ -15,7 +15,9 @@
 | Godot XR Toolsとの関係 | **依存しない**。MITなので必要箇所のみ設計参考・部分移植 |
 | 置き場所 | このリポジトリの`addons/mrgt/`。テンプレート本体（`scenes/main.tscn`）はaddon非依存のまま維持し、デモだけが依存する |
 | 当たり判定 | Autoloadのレジストリ＋距離判定を主経路、物理（`Area3D`）は任意経路 |
-| 最初に作るもの | デスクトップ手シミュレーター → near/far interactor → 押せるボタン |
+| 既存実装 | GitHubを調査した限り、Godot版MRTKに相当するものは無い（第4節） |
+| デスクトップ確認 | 自前シミュレーターは作らず、まずMeta XR Simulatorを使う |
+| 最初に作るもの | near/far interactor＋Interactable → 押せるボタン |
 
 「MRTKみたいなもの」を一度に作ることはできないので、**押せるボタンが1つ、実機3機種で同じ手触りで動く**ところを最初のゴールに置きます。
 
@@ -74,15 +76,47 @@ MRTK3のパッケージ構成を、Godotで作る場合の相当物に対応づ�
 
 パススルー、Meta系のrender model、scene（部屋メッシュ・平面）、hand mesh等を提供します。ただし**端末ごとに公開されるextensionが違う**ため、MRGTは直接依存せず、`ClassDB.class_exists()`で存在確認してから使う既存テンプレートの流儀（`scripts/main.gd`の`_setup_controller_render_models()`）を踏襲します。
 
-### Godot XR Tools（MIT）
+### 既存ライブラリの調査（2026年8月時点）
 
-pointer、pickable、poke、hands、locomotionを提供する既存ライブラリで、4.6に対応し現在も更新されています。関係の選択肢は3つあります。
+「Godot版MRTK」に相当するものが既にないかをGitHubで調べました。**結論として、存在しません。** 近いものは以下です。
 
-1. **依存する**: 実装量は最小。ただしVRゲーム前提（移動・掴み・climb中心）で、MRのUX部品（押し込みボタン、ハンドメニュー、bounds control、solver）は薄く、結局その上に層を重ねることになります。`XRTools*`とMRGTの二重の抽象が並ぶのは、テンプレートの読みやすさを損ないます。
-2. **部分移植**: MITなので、`Viewport2Din3D`相当（3D空間上の2D UI、ポインタのマウス擬似入力）のように再実装コストが高く枯れている部分だけ、出典を明記して取り込みます。
+| プロジェクト | 中身 | 状態 | MRTKとの距離 |
+| --- | --- | --- | --- |
+| [Godot XR Tools](https://github.com/GodotVR/godot-xr-tools)（MIT） | pointer / pickup / poke / snap zone、interactables（area button・slider・hinge・joystick・handle）、`viewport_2d_in_3d`、hands、locomotion一式、staging、desktop-support | 4.4+、2026年6月更新、事実上の標準 | **最も近い**。ただしVRゲーム向け |
+| [Godot XR Kit](https://github.com/patrykkalinowski/godot-xr-kit)（MIT） | 物理ハンド、ハンドジェスチャー認識、1€フィルタによる平滑化、シネマティックビュー | 4.5系、小規模 | 部品単位で参考になる |
+| [Godot Meta Toolkit](https://github.com/godot-sdk-integrations/godot-meta-toolkit)（MIT、W4/Meta） | Meta Platform SDK（実績・課金・フレンド等）、**Meta XR Simulatorの設定ウィザード** | 4.3+、活発 | インタラクションは範囲外 |
+| [Godot XR Handtracking Toolkit](https://github.com/RevolNoom/godot_xr_handtracking)（MIT） | ハンドポーズ記録・照合、掴み（XRPickArea等） | 4.2で停止、小規模 | 参考程度 |
+| [Godot XR Auto Hand](https://github.com/Godot-Dojo/Godot-XR-AH) / [XR Input Simulator](https://github.com/Cafezinhu/godot-vr-simulator) / [Godot-3D-VR-UI](https://github.com/MT-ZD/Godot-3D-VR-UI) | 自動ハンドポーズ、デスクトップ入力シミュレーション、3D UIデモ | 小規模・単機能 | 単機能の参考 |
+
+**MRTK側にあって、上のどれにも無いもの**が、そのままMRGTの存在意義になります。
+
+- 近接／遠隔（poke / grab / ray）の**調停**（Interaction Mode Manager相当）
+- 押し込み量を持つ**PressableButton**と、選択の連続値（selectedness）を軸にした状態→視覚のマッピング
+- **両手対応のObjectManipulator**、**BoundsControl**、constraints
+- **Solver**群（Follow / RadialView / HandConstraintによるハンドメニュー / SurfaceMagnetism / TapToPlace）
+- **テーマ**による一括の見た目・寸法・効果音の差し替え
+- MR前提のUXコンポーネント群（VRゲームの「掴む・撃つ」ではなく「読む・押す・並べる」向け）
+
+Godot XR Toolsの`interactables/`にあるのはarea button・slider・hinge・joystick・handleで、物理的なレバーやノブが中心です。MRTKの「浮いた板を指で押し込む」系のUXとは想定が違い、solverもbounds controlもありません。
+
+### Godot XR Toolsとの関係
+
+選択肢は3つあります。
+
+1. **依存する**: 実装量は最小。ただし上記のとおりVRゲーム前提で、MRのUX部品は自前になります。`XRTools*`とMRGTの二重の抽象が並ぶのは、テンプレートの読みやすさを損ないます。
+2. **部分移植**: MITなので、`viewport_2d_in_3d`相当（3D空間上の2D UI、ポインタのマウス擬似入力）のように再実装コストが高く枯れている部分だけ、出典を明記して取り込みます。
 3. **独立**: それ以外は自作。
 
 **提案は2＋3**です。ただし「移動（locomotion）が欲しくなったらXR Toolsを併用する」余地は残します。MRGTのinteractorがXR Toolsの物理レイヤーと衝突しないよう、**物理レイヤーの使用番号を規約として文書化**します。
+
+### デスクトップ確認手段（調査で方針変更）
+
+当初は独自のデスクトップ手シミュレーターをM0に置いていましたが、既存手段があるため優先度を下げます。
+
+- **Meta XR Simulator**: Quest（手・パススルー・部屋レイアウトを含む）をOpenXR API層で模擬するPC/Mac向けrun-time。Godot本体が既に対応しており、Godot Meta Toolkitに設定ウィザードがあります。**Windows / macOSのみ**、Meta前提という制約があります。
+- **[XR Input Simulator](https://github.com/Cafezinhu/godot-vr-simulator)**: `XRController3D`と`XRCamera3D`をマウス・キーで動かす軽量addon。手の関節までは模擬しません。
+
+**方針**: まずMeta XR Simulatorを使い、`XRHandTracker`を直接注入する自前の軽量シミュレーター（Linux対応・自動テスト用）は、必要になった段階で作ります。
 
 ## 5. Godot流への読み替え
 
@@ -212,10 +246,10 @@ MRTKのInteraction Mode Managerに相当する調停を`MRGTInteractionManager`�
 
 - `scripts/main.gd`を「XRセッション管理」と「デモ表示」に分割し、前者を`addons/mrgt/runtime/`へ
 - XRリグを`PackedScene`化して再利用可能に
-- **デスクトップ手シミュレーター**: マウスとキーで手の位置・pinchを模擬し、fallback表示上で判定を動かす
-- 受け入れ: 実機ビルドなしで、PC上でホバー／選択が発生することを確認できる
+- Meta XR Simulatorでの起動手順を確認してREADMEに追記（自前シミュレーターは作らない）
+- 受け入れ: 実機ビルドなしで、PC上でパススルー相当・手・コントローラーが動く状態を作れる
 
-シミュレーターを最初に置く理由は、以降の全段階の反復速度がここで決まるからです。APKを焼いて被って確認するループは1回数分かかります。
+APKを焼いて被って確認するループは1回数分かかるので、以降の全段階の反復速度はここで決まります。既存手段で足りるならそれを使い、足りないと分かった時点で自前シミュレーターを検討します。
 
 ### M1: インタラクションのコア
 
@@ -275,13 +309,18 @@ MRTKのInteraction Mode Managerに相当する調停を`MRGTInteractionManager`�
 2. **置き場所**: このリポジトリの`addons/mrgt/`に置くか、最初から別リポジトリにしてテンプレートは薄いままにするか
 3. **名前と接頭辞**: `MRGT`でよいか（`MRTK`は他プロダクト名なので避ける）
 4. **Godot XR Tools**: 第4節の「部分移植＋独立」でよいか、それとも依存して上に載せるか
-5. **最初の一歩**: 提案はM0のデスクトップ手シミュレーターです。実機確認のループを短くしてから中身に入りたいためですが、先に見栄えするもの（押せるボタン）を作る進め方でも構いません
+5. **最初の一歩**: 提案はM0（`main.gd`の分割とMeta XR Simulatorでの確認環境）です。先に見栄えするもの（押せるボタン）から作る進め方でも構いません
+6. **開発マシン**: Meta XR SimulatorはWindows / macOSのみです。Linuxで開発するなら自前シミュレーターの優先度が上がります
 
 ## 参考
 
 - [MRTK3 overview（Microsoft Learn）](https://learn.microsoft.com/en-us/windows/mixed-reality/mrtk-unity/mrtk3-overview/)
 - [MixedRealityToolkit-Unity（GitHub）](https://github.com/MixedRealityToolkit/MixedRealityToolkit-Unity)
 - [Godot XR Tools（GitHub / MIT）](https://github.com/GodotVR/godot-xr-tools)
+- [Godot XR Kit（GitHub / MIT）](https://github.com/patrykkalinowski/godot-xr-kit)
+- [Godot Meta Toolkit（GitHub / MIT）](https://github.com/godot-sdk-integrations/godot-meta-toolkit)
+- [Meta XR Simulator（Meta Horizon OS Developers）](https://developers.meta.com/horizon/documentation/unity/xrsim-intro/)
+- [Godot XR/VR/MR projects一覧](https://github.com/Cigam-HFden/Godot-XR-Projects)
 - [Setting up XR（Godot 4.6）](https://docs.godotengine.org/en/4.6/tutorials/xr/setting_up_xr.html)
 - [OpenXR hand tracking（Godot 4.6）](https://docs.godotengine.org/en/4.6/tutorials/xr/openxr_hand_tracking.html)
 - [OpenXR composition layers（Godot 4.6）](https://docs.godotengine.org/en/4.6/tutorials/xr/openxr_composition_layers.html)
