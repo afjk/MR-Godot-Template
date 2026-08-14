@@ -137,6 +137,7 @@ addons/godotopenxrvendors/plugin.gdextension
 - `Meta XR Features > Passthrough`: `Required`
 - `Meta XR Features > Hand Tracking`: `Optional`
 - `Meta XR Features > Hand Tracking Frequency`: `High`
+- `Meta XR Features > Render Model`: `Optional`
 - `Meta XR Features > Boundary Mode`: `Enabled`
 - `Meta XR Features > Quest 3 Support`: 有効
 - Quest 1、Quest 2、Quest Pro Support: 無効
@@ -430,19 +431,30 @@ adb install build/android-xr-mr-template.apk
 
 `scenes/main.tscn`の左右grip controller配下に、Godot 4.6 coreの`OpenXRRenderModelManager`を配置しています。`xr/openxr/extensions/render_model=true`と組み合わせて、runtimeが提供するコントローラーの実物3Dモデルを表示します。
 
-表示の優先順位は次のとおりで、`scripts/main.gd`の`_setup_controller_render_models()`が起動時に判定します。
+コントローラーモデルを提供するOpenXR extensionは2種類あり、**どちらを公開するかはruntimeによって異なります**。
 
-1. **core `XR_EXT_render_model`**: Godot本体の実装。ベンダー非依存で、pluginを必要としません
-2. **`XR_FB_render_model`**: 1が使えない場合、OpenXR Vendors pluginの`OpenXRFbRenderModel`をclass名から動的に生成します。Meta端末向けの経路です
-3. **球マーカー**: どちらも使えない場合は、従来どおり左右で色分けした球を表示します
+| extension | 実装元 | 確認済みの端末 |
+| --- | --- | --- |
+| `XR_EXT_render_model` | Godot 4.6 core | PICO 4 Ultra |
+| `XR_FB_render_model` | OpenXR Vendors plugin | Meta Quest 3 |
 
-2の生成に`ClassDB.instantiate()`を使っているため、OpenXR Vendors pluginが未インストールでもプロジェクトは読み込めます。どの経路になったかは起動時のログに出ます。
+そのため`scripts/main.gd`の`_setup_controller_render_models()`は起動時に**両方を用意し**、`_update_render_models()`が実際にモデルを返した方を毎フレーム採用します。どちらも返さない場合だけ、従来どおり左右で色分けした球マーカーを表示します。両方がモデルを返した場合はcore側を優先し、二重描画しません。
+
+Meta経路の`OpenXRFbRenderModel`は`ClassDB.instantiate()`でclass名から生成しているため、OpenXR Vendors pluginが未インストールでもプロジェクトは読み込めます。
+
+どのextensionが使えたかは起動時のログに出ます。
 
 ```text
-OpenXR: using the core render model extension for controllers
-OpenXR: using the Meta render model extension for controllers
+OpenXR: render models - core true, Meta true
 OpenXR: no render model extension available, using marker spheres
 ```
+
+Meta経路を使うには次の2つが必要です。どちらか一方でも欠けるとQuestでモデルが表示されません。
+
+- `project.godot`の`xr/openxr/extensions/meta/render_model=true`
+- Quest presetの`Meta XR Features > Render Model`（`Optional`以上）
+
+後者を有効にすると、Android manifestへ`com.oculus.permission.RENDER_MODEL`が追加されます。
 
 あわせて`OpenXRInterface.set_motion_range()`を切り替えています。コントローラー由来のHand Trackingでは`CONFORM_TO_CONTROLLER`、光学式では`UNOBSTRUCTED`を指定し、指がコントローラーを突き抜けないようにします。
 

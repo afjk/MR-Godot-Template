@@ -160,30 +160,31 @@ func _on_openxr_pose_recentered() -> void:
 
 
 func _setup_controller_render_models() -> void:
-	# Godot 4.6 ships the vendor neutral XR_EXT_render_model, driven by the
-	# OpenXRRenderModelManager nodes already present in the scene. When the
-	# runtime does not implement it, fall back to the Meta specific
-	# XR_FB_render_model node from the OpenXR Vendors plugin.
-	if _is_core_render_model_active():
-		print("OpenXR: using the core render model extension for controllers")
-		return
+	# Two extensions can supply controller models: the vendor neutral
+	# XR_EXT_render_model that Godot 4.6 implements in core, driven by the
+	# OpenXRRenderModelManager nodes already present in the scene, and the older
+	# Meta XR_FB_render_model from the OpenXR Vendors plugin. Runtimes differ in
+	# which one they expose, so set both up and let _update_render_models() use
+	# whichever actually produces a model.
+	var core_active := _is_core_render_model_active()
+	var fb_available := ClassDB.class_exists(&"OpenXRFbRenderModel")
 
-	if not ClassDB.class_exists(&"OpenXRFbRenderModel"):
+	if fb_available:
+		# Instantiate by name so the project still loads without the vendors plugin.
+		for hand_index in grip_controllers.size():
+			var render_model := ClassDB.instantiate(&"OpenXRFbRenderModel") as Node3D
+			if render_model == null:
+				fb_render_models.clear()
+				fb_available = false
+				break
+
+			render_model.set(&"render_model_type", hand_index)
+			grip_controllers[hand_index].add_child(render_model)
+			fb_render_models.append(render_model)
+
+	print("OpenXR: render models - core %s, Meta %s" % [core_active, fb_available])
+	if not core_active and not fb_available:
 		print("OpenXR: no render model extension available, using marker spheres")
-		return
-
-	# Instantiate by name so the project still loads without the vendors plugin.
-	for hand_index in grip_controllers.size():
-		var render_model := ClassDB.instantiate(&"OpenXRFbRenderModel") as Node3D
-		if render_model == null:
-			fb_render_models.clear()
-			return
-
-		render_model.set(&"render_model_type", hand_index)
-		grip_controllers[hand_index].add_child(render_model)
-		fb_render_models.append(render_model)
-
-	print("OpenXR: using the Meta render model extension for controllers")
 
 
 func _is_core_render_model_active() -> bool:
@@ -193,15 +194,18 @@ func _is_core_render_model_active() -> bool:
 	return Engine.get_singleton(&"OpenXRRenderModelExtension").is_active()
 
 
-func _has_controller_render_model(hand_index: int) -> bool:
+func _update_render_models(hand_index: int) -> bool:
 	# The core manager parents each loaded model under itself.
-	if render_model_managers[hand_index].get_child_count() > 0:
-		return true
+	var core_has_model := render_model_managers[hand_index].get_child_count() > 0
+	if hand_index >= fb_render_models.size():
+		return core_has_model
 
-	if hand_index < fb_render_models.size():
-		return fb_render_models[hand_index].call(&"has_render_model_node")
+	# A runtime can expose both extensions; never draw two models on one hand.
+	var fb_model: Node3D = fb_render_models[hand_index]
+	var fb_has_model: bool = fb_model.call(&"has_render_model_node")
+	fb_model.visible = fb_has_model and not core_has_model
 
-	return false
+	return core_has_model or fb_has_model
 
 
 func _create_hand_joint_markers() -> void:
@@ -264,7 +268,7 @@ func _update_controller_visuals() -> void:
 
 		# Prefer the model the runtime supplies, and keep the marker sphere as the
 		# fallback for runtimes that expose no render model extension.
-		controller_markers[hand_index].visible = not _has_controller_render_model(hand_index)
+		controller_markers[hand_index].visible = not _update_render_models(hand_index)
 		_update_hand_motion_range(hand_index, hand_tracking_active)
 
 
