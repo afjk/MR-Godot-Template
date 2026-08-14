@@ -13,6 +13,9 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision向けの最小Mixed Reality（MR
 - `XRHandTracker`が返す左右26関節の軽量な球表示
 - 前方の回転キューブと、追跡中だけ表示する小さなコントローラーマーカー
 - 実世界を覆う不透明な床なし
+- runtimeが提供する最良のdisplay refresh rateを起動時に選択し、物理レートを追従
+- ヘッドセットを外した際のフォーカス喪失で処理を一時停止し、復帰で再開
+- Local Floor reference spaceとfoveated rendering / MSAA 2xの推奨設定
 - OpenXR未初期化またはAlpha blend非対応時のデスクトップ表示fallback
 
 ## ビルド手順
@@ -453,6 +456,51 @@ PRのAPKを取得する手順です。
 artifactの保存期間は14日です。PRへ新しいcommitをpushすると古い実行はキャンセルされ、最新commitで再ビルドされます。Actions画面の `Run workflow` から手動実行することもできます。
 
 このworkflowはDebug APK専用です。署名用Secretsを使用しないため、Meta Horizon Storeへ提出するRelease APK/AABは生成しません。
+
+## GitHub ActionsでのGDScript静的チェック
+
+[`.github/workflows/static-checks.yml`](.github/workflows/static-checks.yml) が、PRと`main`へのpushで[gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit)を実行します。Godot OpenXR Vendorsリポジトリの`static_checks.yml`と同じ構成です。
+
+- `gdformat --diff`: GDScriptの書式が整形結果と一致するか検証します
+- `gdlint`: 命名規則や宣言順などのスタイル違反を検出します
+
+対象はgitで追跡している`.gd`ファイルのうち`addons/`以外です。OpenXR Vendors pluginはビルド時に取得する外部アセットなので除外しています。
+
+ローカルで同じチェックを実行する手順です。
+
+```bash
+pip install 'gdtoolkit==4.*'
+gdformat --diff scripts/
+gdlint scripts/
+```
+
+`gdformat --diff` が差分を出した場合は、`gdformat scripts/` で自動整形できます。
+
+## パフォーマンス関連のプロジェクト設定
+
+`project.godot` には、Godot OpenXR Vendors 5.0以降に同梱されるXR project setup wizardが推奨する値を設定しています。
+
+```text
+rendering/anti_aliasing/quality/msaa_3d=1   MSAA 2x
+rendering/vrs/mode=2                        VRSをXRモードに
+xr/openxr/reference_space=2                 Local Floor
+xr/openxr/foveation_level=3                 Foveated renderingをHighに
+xr/openxr/foveation_dynamic=true            負荷に応じてfoveationを変動
+```
+
+`rendering/vrs/mode`はForward+とMobileでのみ効きます。このテンプレートが使うCompatibility rendererにはrendering deviceが無いため、実際には`xr/openxr/foveation_level`の側がGPU負荷を下げます。`scripts/main.gd`の`_configure_foveation()`が実行時に判定し、rendering deviceがあれば`Viewport.VRS_XR`を設定し、無い場合はfoveation levelが未設定なら警告を出します。
+
+`reference_space`をLocal Floorにしているため、原点は起動時のユーザー位置を基準にした床面になります。Stageと違いガーディアン設定に依存しないので、正面約1.5mのキューブがどこで起動しても同じ位置に出ます。
+
+Godotエディター上では、OpenXR Vendors pluginが追加する`Project > Tools > XR Project Setup Wizard...`からも同じ推奨値を検証・適用できます。Export presetの必須項目も併せて検証されるため、手順8以降のpreset確認の補助として使えます。
+
+## リフレッシュレートとフォーカス処理
+
+`scripts/main.gd`は、OpenXRのセッションシグナルを受けて次の処理を行います。
+
+- `session_begun`: `get_available_display_refresh_rates()`から`maximum_refresh_rate`（既定90Hz）以下で最良のレートを選び、`set_display_refresh_rate()`で適用したうえで`Engine.physics_ticks_per_second`を実測レートへ合わせます。runtimeがレートを返さない場合は`project.godot`の90Hzのままです。
+- `session_visible` / `session_focussed`: ヘッドセットを外すなどでフォーカスを失うと`process_mode`を`PROCESS_MODE_DISABLED`にして処理を止め、復帰時に再開します。`focus_lost`と`focus_gained`シグナルも公開しています。
+- `pose_recentered`: runtimeによるリセンターを`pose_recentered`シグナルとして中継します。実際の再配置内容はアプリ依存のため、このテンプレートでは何も動かしません。
 
 ## デスクトップfallback
 

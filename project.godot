@@ -25,6 +25,8 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0, 0, 0, 0)
+anti_aliasing/quality/msaa_3d=1
+vrs/mode=2
 
 [xr]
 
@@ -32,7 +34,10 @@ openxr/enabled=true
 openxr/default_action_map="res://openxr_action_map.tres"
 openxr/form_factor=0
 openxr/view_configuration=1
+openxr/reference_space=2
 openxr/environment_blend_mode=2
+openxr/foveation_level=3
+openxr/foveation_dynamic=true
 openxr/startup_alert=false
 openxr/extensions/hand_tracking=true
 openxr/extensions/hand_tracking_controller_data_source=true
