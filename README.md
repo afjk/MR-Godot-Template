@@ -1,6 +1,6 @@
-# Quest / PICO / VIVE MR Godot Template
+# Quest / PICO / VIVE / Android XR MR Godot Template
 
-Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision向けの最小Mixed Reality（MR）テンプレートです。Godot 4.6、Compatibility renderer、OpenXRを前提にしています。
+Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの最小Mixed Reality（MR）テンプレートです。Godot 4.6、Compatibility renderer、OpenXRを前提にしています。
 
 外部アセット、Godot XR Tools、移動、掴み、UI、scene understanding、anchorsは含みません。参考にしたUnity版は [Meta Quest MR Unity Template](https://github.com/afjk/Meta-Quest-MR-Unity-Template) です。
 
@@ -11,6 +11,7 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision向けの最小Mixed Reality（MR
 - `XROrigin3D`、`XRCamera3D`、左右の `XRController3D`
 - Quest 3、PICO 4 Ultra、VIVE Focus Visionの光学式Hand Tracking、およびruntimeが提供するコントローラー推定Hand Tracking
 - `XRHandTracker`が返す左右26関節の軽量な球表示
+- runtimeが提供するコントローラー3Dモデルの表示と、非対応時の球マーカーへのfallback
 - 前方の回転キューブと、追跡中だけ表示する小さなコントローラーマーカー
 - 実世界を覆う不透明な床なし
 - runtimeが提供する最良のdisplay refresh rateを起動時に選択し、物理レートを追従
@@ -136,6 +137,7 @@ addons/godotopenxrvendors/plugin.gdextension
 - `Meta XR Features > Passthrough`: `Required`
 - `Meta XR Features > Hand Tracking`: `Optional`
 - `Meta XR Features > Hand Tracking Frequency`: `High`
+- `Meta XR Features > Render Model`: `Optional`
 - `Meta XR Features > Boundary Mode`: `Enabled`
 - `Meta XR Features > Quest 3 Support`: 有効
 - Quest 1、Quest 2、Quest Pro Support: 無効
@@ -370,6 +372,94 @@ adb install build/vive-focus-vision-mr-template.apk
 
 VIVE Focus Vision実機では、起動、Head/Controller tracking、aim/grip pose、光学式Hand Trackingの26関節、controllerからhandへの切り替え、Alpha blendによるpassthrough、アプリ再開後の復帰を確認してください。このブランチでは実機検証を行っていません。
 
+## Android XR向けビルド
+
+Samsung Galaxy XRなどのAndroid XR端末向けpresetです。GodotとAndroid SDKの導入、OpenXR Vendors plugin、Android Gradle Build Templateまでは共通手順2から7と同じです。
+
+### 1. Android XR用Export設定を確認
+
+`Project > Export`を開き、`Android XR` presetを選択します。次の値になっていることを確認してください。
+
+- `Use Gradle Build`: 有効
+- `Architectures > Arm 64 -v 8a`: 有効
+- その他のArchitecture: 無効
+- `XR Mode`: `OpenXR`
+- `OpenXR Vendors > Meta`: 無効
+- `OpenXR Vendors > PICO`: 無効
+- `OpenXR Vendors > Khronos`: 無効
+- `OpenXR Vendors > Android XR`: 有効
+- `Android XR Features > Hand Tracking`: `Optional`
+- `Android XR Features > Tracked Controllers`: `Optional`
+- `Android XR Features > Recommended Boundary Type`: `None`
+- `Android XR Features > Use Experimental Features`: 無効
+
+### 2. パススルーに追加設定が不要な理由
+
+Meta、PICO、VIVEと違い、**Android XRのパススルーにはベンダー固有の拡張設定が要りません**。Godot OpenXR Vendors 5.1.0のAndroid XR export pluginには`meta_xr_features/passthrough`や`xr/openxr/extensions/htc/passthrough`に相当する項目が存在せず、Android XRのMRは標準OpenXRのAlpha environment blendそのもので動作します。
+
+このテンプレートの`scripts/main.gd`は`get_supported_environment_blend_modes()`でベンダー非依存に対応blend modeを判定しているため、Android XR向けにコードを変更する必要はありません。
+
+### 3. Android XR用APKをビルド
+
+```bash
+godot --headless --path . \
+  --install-android-build-template \
+  --export-debug "Android XR" \
+  build/android-xr-mr-template.apk
+```
+
+Android Build Templateをすでにインストール済みの場合は、`--install-android-build-template`を省略できます。
+
+### 4. インストール
+
+端末側でDeveloper ModeとUSB debuggingを有効にし、`adb devices`で`device`と表示されることを確認してからインストールします。
+
+```bash
+adb install -r build/android-xr-mr-template.apk
+```
+
+署名が異なるAPKとの競合で`INSTALL_FAILED_UPDATE_INCOMPATIBLE`になる場合だけ、保存データが消えることを確認したうえで削除して入れ直します。
+
+```bash
+adb uninstall com.example.androidxrmrgodottemplate
+adb install build/android-xr-mr-template.apk
+```
+
+> **未検証**: このpresetはAndroid XR実機で動作確認していません。Export設定はGodot OpenXR Vendorsの`demo/export_presets.cfg`のAndroid XR presetに合わせています。
+
+## コントローラーの3Dモデル表示
+
+`scenes/main.tscn`の左右grip controller配下に、Godot 4.6 coreの`OpenXRRenderModelManager`を配置しています。`xr/openxr/extensions/render_model=true`と組み合わせて、runtimeが提供するコントローラーの実物3Dモデルを表示します。
+
+コントローラーモデルを提供するOpenXR extensionは2種類あり、**どちらを公開するかはruntimeによって異なります**。
+
+| extension | 実装元 | 確認済みの端末 |
+| --- | --- | --- |
+| `XR_EXT_render_model` | Godot 4.6 core | PICO 4 Ultra |
+| `XR_FB_render_model` | OpenXR Vendors plugin | Meta Quest 3 |
+
+そのため`scripts/main.gd`の`_setup_controller_render_models()`は起動時に**両方を用意し**、`_update_render_models()`が実際にモデルを返した方を毎フレーム採用します。どちらも返さない場合だけ、従来どおり左右で色分けした球マーカーを表示します。両方がモデルを返した場合はcore側を優先し、二重描画しません。
+
+Meta経路の`OpenXRFbRenderModel`は`ClassDB.instantiate()`でclass名から生成しているため、OpenXR Vendors pluginが未インストールでもプロジェクトは読み込めます。
+
+どのextensionが使えたかは起動時のログに出ます。
+
+```text
+OpenXR: render models - core true, Meta true
+OpenXR: no render model extension available, using marker spheres
+```
+
+Meta経路を使うには次の2つが必要です。どちらか一方でも欠けるとQuestでモデルが表示されません。
+
+- `project.godot`の`xr/openxr/extensions/meta/render_model=true`
+- Quest presetの`Meta XR Features > Render Model`（`Optional`以上）
+
+後者を有効にすると、Android manifestへ`com.oculus.permission.RENDER_MODEL`が追加されます。
+
+あわせて`OpenXRInterface.set_motion_range()`を切り替えています。コントローラー由来のHand Trackingでは`CONFORM_TO_CONTROLLER`、光学式では`UNOBSTRUCTED`を指定し、指がコントローラーを突き抜けないようにします。
+
+実際にモデルが出るかはruntimeが該当extensionを公開しているかに依存します。非対応でも球マーカーへ落ちるだけで、従来の挙動から後退はしません。
+
 ## トラブルシューティング
 
 ### `No export template found`と表示される
@@ -426,6 +516,21 @@ Godotの `Java SDK Path` がJDK 17を指しているか確認してください�
 - `adb logcat`でOpenXR runtimeまたはextension初期化エラーを確認する
 - passthroughが使えない場合はruntimeが`XR_HTC_passthrough`を公開しているか実機で確認する
 
+### OpenXRの挙動そのものを詳しく調べたい（Validation Layers）
+
+Godot OpenXR Vendors 5.0以降には、Khronosの[OpenXR Validation Layers](https://www.khronos.org/blog/new-openxr-validation-layer-helps-developers-build-robustly-portable-xr-applications)がAndroidライブラリとして同梱されています。GodotのOpenXR呼び出しが仕様どおりかを実機で検証でき、テンプレートを改造して動かなくなったときの切り分けに使えます。
+
+各presetには`xr_features/enable_openxr_validation_layers=false`を明示してあります。有効化する手順です。
+
+1. `Project > Export`で対象のpresetを選びます。
+2. `XR Features > Enable Openxr Validation Layers` を有効にします。
+3. Debug APKをビルドして端末へインストールします。
+4. `adb logcat`でvalidation messageを確認します。
+
+`project.godot`には`xr/openxr/extensions/debug_utils=2`（Warning以上）を設定済みです。この設定が無いと、validation layerが検出した内容がGodot側のログに出ません。
+
+APKサイズが増えるため、**Debugビルドでの一時的な調査にのみ使用し、配布ビルドでは無効に戻してください**。
+
 ### `No project icon specified`という警告が出る
 
 現時点ではプロジェクトアイコンを同梱していないため表示されます。Debug APKのビルド自体には影響しません。
@@ -434,7 +539,7 @@ AndroidとXR exportの詳細は [Exporting for Android](https://docs.godotengine
 
 ## GitHub ActionsでPRのAPKをビルド
 
-`main`向けのPull Requestを作成または更新すると、[`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml) がQuest 3、PICO 4 Ultra、VIVE Focus Vision用のDebug APKをmatrixで並列ビルドします。Unity参考リポジトリと同様に、ビルド結果はGitHub Actionsのartifactとして個別に保存されます。
+`main`向けのPull Requestを作成または更新すると、[`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml) がQuest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR用のDebug APKをmatrixで並列ビルドします。Unity参考リポジトリと同様に、ビルド結果はGitHub Actionsのartifactとして個別に保存されます。
 
 CIでは次の環境を毎回再現します。
 
@@ -443,15 +548,15 @@ CIでは次の環境を毎回再現します。
 - Android SDK Platform 35 / Build-Tools 35.0.1
 - Godot Android Export Templates 4.6.3
 - OpenXR Vendors plugin `5.1.0-stable`
-- `Meta Quest 3`、`PICO 4 Ultra`、`VIVE Focus Vision`のDebug export preset
+- `Meta Quest 3`、`PICO 4 Ultra`、`VIVE Focus Vision`、`Android XR`のDebug export preset
 
 PRのAPKを取得する手順です。
 
 1. GitHubで `main` 向けのPull Requestを作成します。
-2. PRのChecksまたはActionsタブで、`Meta Quest 3`、`PICO 4 Ultra`、`VIVE Focus Vision`のDebug APK build完了を待ちます。
+2. PRのChecksまたはActionsタブで、`Meta Quest 3`、`PICO 4 Ultra`、`VIVE Focus Vision`、`Android XR`のDebug APK build完了を待ちます。
 3. 完了したworkflow runを開きます。
 4. ページ下部の`Artifacts`から必要なartifactをダウンロードします。
-5. Quest用は`quest-mr-template-pr-<PR番号>`、PICO用は`pico4-ultra-mr-template-pr-<PR番号>`、VIVE用は`vive-focus-vision-mr-template-pr-<PR番号>`です。
+5. Quest用は`quest-mr-template-pr-<PR番号>`、PICO用は`pico4-ultra-mr-template-pr-<PR番号>`、VIVE用は`vive-focus-vision-mr-template-pr-<PR番号>`、Android XR用は`android-xr-mr-template-pr-<PR番号>`です。
 
 artifactの保存期間は14日です。PRへ新しいcommitをpushすると古い実行はキャンセルされ、最新commitで再ビルドされます。Actions画面の `Run workflow` から手動実行することもできます。
 

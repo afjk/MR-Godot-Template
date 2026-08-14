@@ -34,6 +34,9 @@ jobs:
           - preset: VIVE Focus Vision
             apk: vive-focus-vision-mr-template.apk
             artifact: vive-focus-vision-mr-template
+          - preset: Android XR
+            apk: android-xr-mr-template.apk
+            artifact: android-xr-mr-template
 
     steps:
       - name: Checkout repository

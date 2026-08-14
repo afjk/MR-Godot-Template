@@ -28,6 +28,10 @@ const INACTIVE_HAND_SOURCES: Array[int] = [
 var xr_interface: OpenXRInterface
 var xr_is_focussed := false
 var hand_joint_markers: Array = []
+## Meta XR_FB_render_model nodes, only created when the core extension is inactive.
+var fb_render_models: Array = []
+## Last motion range pushed per hand, so we only call into the runtime on change.
+var hand_motion_ranges: Array[int] = [-1, -1]
 
 @onready var viewport: Viewport = get_viewport()
 @onready var environment: Environment = $WorldEnvironment.environment
@@ -40,6 +44,14 @@ var hand_joint_markers: Array = []
 @onready var grip_controllers: Array[XRController3D] = [
 	$XROrigin3D/LeftGripController,
 	$XROrigin3D/RightGripController,
+]
+@onready var controller_markers: Array[Node3D] = [
+	$XROrigin3D/LeftGripController/ControllerModel,
+	$XROrigin3D/RightGripController/ControllerModel,
+]
+@onready var render_model_managers: Array[OpenXRRenderModelManager] = [
+	$XROrigin3D/LeftGripController/RenderModel,
+	$XROrigin3D/RightGripController/RenderModel,
 ]
 
 
@@ -60,6 +72,7 @@ func _ready() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	_configure_foveation()
 	_connect_openxr_signals()
+	_setup_controller_render_models()
 	_create_hand_joint_markers()
 	print("OpenXR MR initialized with Alpha environment blend")
 
@@ -146,6 +159,55 @@ func _on_openxr_pose_recentered() -> void:
 	pose_recentered.emit()
 
 
+func _setup_controller_render_models() -> void:
+	# Two extensions can supply controller models: the vendor neutral
+	# XR_EXT_render_model that Godot 4.6 implements in core, driven by the
+	# OpenXRRenderModelManager nodes already present in the scene, and the older
+	# Meta XR_FB_render_model from the OpenXR Vendors plugin. Runtimes differ in
+	# which one they expose, so set both up and let _update_render_models() use
+	# whichever actually produces a model.
+	var core_active := _is_core_render_model_active()
+	var fb_available := ClassDB.class_exists(&"OpenXRFbRenderModel")
+
+	if fb_available:
+		# Instantiate by name so the project still loads without the vendors plugin.
+		for hand_index in grip_controllers.size():
+			var render_model := ClassDB.instantiate(&"OpenXRFbRenderModel") as Node3D
+			if render_model == null:
+				fb_render_models.clear()
+				fb_available = false
+				break
+
+			render_model.set(&"render_model_type", hand_index)
+			grip_controllers[hand_index].add_child(render_model)
+			fb_render_models.append(render_model)
+
+	print("OpenXR: render models - core %s, Meta %s" % [core_active, fb_available])
+	if not core_active and not fb_available:
+		print("OpenXR: no render model extension available, using marker spheres")
+
+
+func _is_core_render_model_active() -> bool:
+	if not Engine.has_singleton(&"OpenXRRenderModelExtension"):
+		return false
+
+	return Engine.get_singleton(&"OpenXRRenderModelExtension").is_active()
+
+
+func _update_render_models(hand_index: int) -> bool:
+	# The core manager parents each loaded model under itself.
+	var core_has_model := render_model_managers[hand_index].get_child_count() > 0
+	if hand_index >= fb_render_models.size():
+		return core_has_model
+
+	# A runtime can expose both extensions; never draw two models on one hand.
+	var fb_model: Node3D = fb_render_models[hand_index]
+	var fb_has_model: bool = fb_model.call(&"has_render_model_node")
+	fb_model.visible = fb_has_model and not core_has_model
+
+	return core_has_model or fb_has_model
+
+
 func _create_hand_joint_markers() -> void:
 	var sphere := SphereMesh.new()
 	sphere.radius = JOINT_MARKER_RADIUS
@@ -203,6 +265,26 @@ func _update_controller_visuals() -> void:
 
 		aim_controller.visible = aim_controller.get_is_active() and not hand_tracking_active
 		grip_controller.visible = grip_controller.get_is_active() and not hand_tracking_active
+
+		# Prefer the model the runtime supplies, and keep the marker sphere as the
+		# fallback for runtimes that expose no render model extension.
+		controller_markers[hand_index].visible = not _update_render_models(hand_index)
+		_update_hand_motion_range(hand_index, hand_tracking_active)
+
+
+func _update_hand_motion_range(hand_index: int, hand_tracking_active: bool) -> void:
+	# Optically tracked hands move freely; hands derived from a held controller
+	# should conform to the controller shape so the fingers do not clip through it.
+	var motion_range := (
+		OpenXRInterface.HAND_MOTION_RANGE_UNOBSTRUCTED
+		if hand_tracking_active
+		else OpenXRInterface.HAND_MOTION_RANGE_CONFORM_TO_CONTROLLER
+	)
+	if hand_motion_ranges[hand_index] == motion_range:
+		return
+
+	hand_motion_ranges[hand_index] = motion_range
+	xr_interface.set_motion_range(hand_index, motion_range)
 
 
 func _is_hand_tracking_active(tracker: XRHandTracker) -> bool:
