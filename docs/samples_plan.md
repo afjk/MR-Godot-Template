@@ -1,6 +1,6 @@
 # サンプル集としての構成 検討メモ
 
-このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。実装はまだ行っていません。
+このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1（骨格と基礎4サンプル）は実装済みです。
 
 関連: [インタラクション基盤の検討](mr_toolkit_design.md) / [空間認識の検討](spatial_understanding_design.md)
 
@@ -23,20 +23,24 @@
 
 ```text
 scenes/main.tscn          ランチャー。起動時のサンプル一覧（main_sceneはこれ）
+scripts/launcher*.gd      ランチャーの実装（サンプルではないので規約の対象外）
 shared/
-  xr_rig.tscn             XROrigin3D、カメラ、左右コントローラー、Hand Tracking
-  xr_runtime.gd           OpenXR初期化、blend mode、refresh rate、フォーカス処理
+  xr_rig.tscn             XROrigin3D、カメラ、左右のaim / gripコントローラー
+  mr_stage.tscn / .gd     MRの土台。OpenXR初期化、blend mode、refresh rate、フォーカス処理
   sample_bootstrap.gd     Autoload。リグが無いシーンを単体実行したとき自動で挿す
-  ui/                     サンプル共通のパネル・ラベル（説明表示、非対応の告知）
+  sample_info.gd          1サンプルの説明。ランチャーが一覧に使う
+  sample_library.gd       一覧そのもの
 samples/
   passthrough/            sample.tscn / sample.gd / README.md
   hand_tracking/
   controller_models/
-  ...
+  session_lifecycle/
   samples.tres            一覧の定義（タイトル・説明・対応端末・シーンパス）
-docs/                     検討メモ
+docs/                     ビルド手順、トラブルシューティング、検討メモ
 export_presets.cfg        4機種分。APKは全サンプル入りの1本
 ```
+
+> 実装時のメモ: 当初`xr_runtime.gd`と呼んでいたものは、環境・ライト・リグをまとめて持つため`mr_stage.gd`（`class_name MRStage`）にしました。共通UI（`shared/ui/`）は、まだ2サンプルでしか要らないため作っていません（第1節の「3つ書いてから抽出する」に従いました）。
 
 ### 3つの決めごと
 
@@ -111,9 +115,11 @@ export_presets.cfg        4機種分。APKは全サンプル入りの1本
 ## 5. ランチャー
 
 - 起動すると、正面に一覧パネルが出る（`samples.tres`から生成）
-- 各項目には**対応端末バッジ**を出し、その端末で動かないものは理由付きでグレー表示
-- サンプル中はいつでもランチャーへ戻れる（メニューボタン長押しなど）
-- 一覧パネル自体が`ui_panel_2d`サンプルの実地デモになる
+- 各項目には**対応端末バッジ**を出す
+- サンプル中は「サンプル一覧へ戻る」パネルが出ており、いつでも戻れる
+- 選択は、コントローラーのaim poseからのレイと`select`アクション、Hand Trackingでは視線＋pinch、デスクトップでは上下キーとEnter
+
+> 実装時のメモ: 一覧は`SubViewport`の2D UIではなく、`Label3D`と`Area3D`による3Dノードで作りました。2D UIを3D面に出す仕組みは`ui_panel_2d`サンプルの主題なので、ランチャーがそれを先取りしないためです。汎用のポインタもまだ作らず、ランチャー専用の`scripts/launcher_pointer.gd`に閉じています。
 
 ただし**ランチャーはサンプルではない**ので、`shared/`ではなく専用の場所に置き、規約（200行以内など）の対象外とします。
 
@@ -141,9 +147,9 @@ READMEの冒頭で「どのサンプルが何を示すか」が一覧できる�
 
 ## 8. 進め方
 
-### P1: 骨格を作る（既存機能の分割）
+### P1: 骨格を作る（既存機能の分割）※実装済み
 
-- `shared/xr_rig.tscn`と`xr_runtime.gd`を`scripts/main.gd`から切り出す
+- `shared/xr_rig.tscn`と`shared/mr_stage.gd`を旧`scripts/main.gd`から切り出す
 - `sample_bootstrap.gd`、`samples.tres`、最小のランチャー
 - 基礎4サンプルへ分割（機能追加はしない。**現状の挙動を保つ**）
 - README再編

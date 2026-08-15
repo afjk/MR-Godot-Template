@@ -71,7 +71,7 @@ addons/mrgt/spatial/
   debug/                      平面・メッシュ・ラベルの可視化
 ```
 
-バックエンドは**起動時に1つ選ぶのではなく、機能単位で選びます**。「平面はMeta Scene、深度はMeta Depth、マーカーはcore」のような組み合わせが普通に起こるためです。既存の`scripts/main.gd`がrender modelでcoreとMeta経路を両方用意して実際に返した方を採る作りになっているので、その考え方をそのまま広げます。
+バックエンドは**起動時に1つ選ぶのではなく、機能単位で選びます**。「平面はMeta Scene、深度はMeta Depth、マーカーはcore」のような組み合わせが普通に起こるためです。`samples/controller_models/sample.gd`がrender modelでcoreとMeta経路を両方用意して実際に返した方を採る作りになっているので、その考え方をそのまま広げます。
 
 ### capability API
 

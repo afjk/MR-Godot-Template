@@ -76,7 +76,7 @@ MRTK3のパッケージ構成を、Godotで作る場合の相当物に対応づ�
 
 ### OpenXR Vendors plugin
 
-パススルー、Meta系のrender model、scene（部屋メッシュ・平面）、hand mesh等を提供します。ただし**端末ごとに公開されるextensionが違う**ため、MRGTは直接依存せず、`ClassDB.class_exists()`で存在確認してから使う既存テンプレートの流儀（`scripts/main.gd`の`_setup_controller_render_models()`）を踏襲します。
+パススルー、Meta系のrender model、scene（部屋メッシュ・平面）、hand mesh等を提供します。ただし**端末ごとに公開されるextensionが違う**ため、MRGTは直接依存せず、`ClassDB.class_exists()`で存在確認してから使う既存の流儀（`samples/controller_models/sample.gd`）を踏襲します。
 
 ### 既存ライブラリの調査（2026年8月時点）
 
@@ -220,7 +220,7 @@ MRTK3の`StatefulInteractable`が持つ「選択の連続値（selectedness）�
 | B. `Area3D`の重なり | Godotの物理broadphaseに載せる | 数が増えても安定。ただし物理tickと描画tickの差でpoke感が鈍る場合がある |
 | C. `ShapeCast3D` / `RayCast3D` | 遠隔レイに使う | 遠隔だけはCが自然。**Aと併用** |
 
-**近接はA、遠隔はC**を主経路にし、Bは大量オブジェクト向けのオプションとして後から足せる形にします。本テンプレートは`Engine.physics_ticks_per_second`をディスプレイのrefresh rateへ合わせているので（`scripts/main.gd`の`_on_openxr_session_begun()`）Bの不利は小さいのですが、Aなら「手の姿勢を読んだそのフレームで判定する」ことが保証できます。
+**近接はA、遠隔はC**を主経路にし、Bは大量オブジェクト向けのオプションとして後から足せる形にします。このプロジェクトは`Engine.physics_ticks_per_second`をディスプレイのrefresh rateへ合わせているので（`shared/mr_stage.gd`）Bの不利は小さいのですが、Aなら「手の姿勢を読んだそのフレームで判定する」ことが保証できます。
 
 ### near / far の排他
 
@@ -228,7 +228,7 @@ MRTKのInteraction Mode Managerに相当する調停を`MRGTInteractionManager`�
 
 - 1つの`MRGTInteractable`を同時に選択できるinteractorは原則1つ（2手掴みは`MRGTObjectManipulator`が例外として扱う）
 - 手がinteractableの近接圏に入ったら、その手のレイは自動的に無効化・非表示
-- Hand TrackingとコントローラーはXRServer側で同時にactiveになり得るため、`scripts/main.gd`の`_is_hand_tracking_active()`と同じ判定で**どちらか一方の経路だけ**を有効にする
+- Hand TrackingとコントローラーはXRServer側で同時にactiveになり得るため、`shared/mr_stage.gd`の`is_hand_tracking_active()`と同じ判定で**どちらか一方の経路だけ**を有効にする
 
 ## 7. UIの実装方式
 
@@ -246,7 +246,7 @@ MRTKのInteraction Mode Managerに相当する調停を`MRGTInteractionManager`�
 
 ### M0: 基盤整理（土台の掃除）
 
-- `scripts/main.gd`を「XRセッション管理」と「デモ表示」に分割し、前者を`addons/mrgt/runtime/`へ
+- ~~`scripts/main.gd`を「XRセッション管理」と「デモ表示」に分割~~（`shared/mr_stage.gd`として実施済み）
 - XRリグを`PackedScene`化して再利用可能に
 - Meta XR Simulatorでの起動手順を確認してREADMEに追記（自前シミュレーターは作らない）
 - 受け入れ: 実機ビルドなしで、PC上でパススルー相当・手・コントローラーが動く状態を作れる
