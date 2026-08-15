@@ -5,6 +5,8 @@
 - 対象: Godot 4.6 / Compatibility renderer / OpenXR / Quest 3・PICO 4 Ultra・VIVE Focus Vision・Android XR
 - 呼称: MRGTの空間認識層（`addons/mrgt/spatial/`）
 
+> **位置づけの更新**: このリポジトリはサンプル集として育てる方針になりました（[docs/samples_plan.md](samples_plan.md)）。空間認識の各機能は、まず`samples/floor_detection/`のような**個別サンプルとして実装**し、共通化はその後です。第4節の正規化層は抽出先の設計として、第3節の端末マトリクスと第7節のセグメンテーションの整理は、サンプルの取捨選択の根拠として使います。
+
 ## 1. 結論の要約
 
 | 論点 | 方針 |
