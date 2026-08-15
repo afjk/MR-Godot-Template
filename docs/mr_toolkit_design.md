@@ -284,6 +284,8 @@ APKを焼いて被って確認するループは1回数分かかるので、以�
 - Spatial Entitiesのanchor / planeを`MRGTInteractable`と接続（壁に貼る、机に置く）
 - 受け入れ: 平面検出した机の上にパネルを置き、再起動後も同じ場所に出る
 
+空間認識そのもの（床面検知・環境メッシュ・セグメンテーション、AR Foundation相当）は、独立して進められるため別メモに分けました。[docs/spatial_understanding_design.md](spatial_understanding_design.md)を参照してください。
+
 ## 9. 品質と検証
 
 - **静的チェック**: 既存のgdformat / gdlintを`addons/mrgt/`へ拡張（第6節）

@@ -620,12 +620,16 @@ openxr_action_map.tres        Quest/PICO/VIVE左右コントローラーのaim/g
 scenes/main.tscn              XR rig、環境、最小デモ
 scripts/main.gd               OpenXR、MR、fallback初期化
 docs/mr_toolkit_design.md     MRTK相当のインタラクション基盤の検討メモ
+docs/spatial_understanding_design.md  床面検知・環境メッシュ・セグメンテーションの検討メモ
 addons/godotopenxrvendors/    Meta/PICO/VIVE向けOpenXR Vendors plugin
 ```
 
 ## 今後の拡張の検討
 
-このテンプレートの次の層として、MRTK3相当のインタラクション基盤（近接・遠隔のポインタ、押せるボタン、掴んで動かす操作、追従メニュー）を検討しています。方針と段階の案は[docs/mr_toolkit_design.md](docs/mr_toolkit_design.md)にまとめています。実装はまだ入っていません。
+このテンプレートの次の層として、以下を検討しています。いずれも実装はまだ入っていません。
+
+- [docs/mr_toolkit_design.md](docs/mr_toolkit_design.md): MRTK3相当のインタラクション基盤（近接・遠隔のポインタ、押せるボタン、掴んで動かす操作、追従メニュー）
+- [docs/spatial_understanding_design.md](docs/spatial_understanding_design.md): AR Foundation相当の空間認識（床面検知、環境メッシュ、セグメンテーション、アンカー）
 
 ## 既知の制約
 
