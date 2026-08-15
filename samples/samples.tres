@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
@@ -35,6 +35,30 @@ scene = "res://samples/session_lifecycle/sample.tscn"
 devices = 15
 notes = ""
 
+[sub_resource type="Resource" id="Sample_poke_button"]
+script = ExtResource("2_info")
+title = "押せるボタン"
+description = "指先やコントローラーでボタンを押し込む。押し込み量から見た目と判定を作る。"
+scene = "res://samples/poke_button/sample.tscn"
+devices = 15
+notes = "指で押すにはHand Tracking"
+
+[sub_resource type="Resource" id="Sample_ray_pointer"]
+script = ExtResource("2_info")
+title = "遠隔ポインタ"
+description = "レイで離れた対象を選ぶ。手を近づけるとレイを引っ込めて近接に切り替える。"
+scene = "res://samples/ray_pointer/sample.tscn"
+devices = 15
+notes = ""
+
+[sub_resource type="Resource" id="Sample_grab_object"]
+script = ExtResource("2_info")
+title = "掴んで動かす"
+description = "pinchまたはgripで掴み、掴んだ瞬間の相対姿勢を手に掛け直して動かす。"
+scene = "res://samples/grab_object/sample.tscn"
+devices = 15
+notes = ""
+
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle")])
+samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object")])

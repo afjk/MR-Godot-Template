@@ -14,8 +14,11 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの、Mixed Re
 | [Hand Tracking](samples/hand_tracking/) | `XRHandTracker`の26関節を表示し、光学式とコントローラー由来を見分ける | 全機種 |
 | [コントローラーモデル](samples/controller_models/) | runtimeが提供するコントローラーの3Dモデル表示と、非対応時の球マーカー | 全機種 |
 | [セッションの扱い](samples/session_lifecycle/) | リフレッシュレートの選択、フォーカスの喪失と復帰、recenter | 全機種 |
+| [押せるボタン](samples/poke_button/) | 指先やコントローラーで押し込む。押し込み量から見た目と判定を作る | 全機種 |
+| [遠隔ポインタ](samples/ray_pointer/) | レイで離れた対象を選ぶ。近づいたら近接へ切り替える | 全機種 |
+| [掴んで動かす](samples/grab_object/) | pinch / gripで掴み、掴んだ瞬間の相対姿勢を手に掛け直す | 全機種 |
 
-インタラクション（押せるボタン、掴んで動かす、追従メニュー）と空間認識（床面検知、環境メッシュ、オクルージョン）は、[検討メモ](#今後の検討)の順で追加していきます。
+2D UIパネル、追従メニュー、両手操作、空間認識（床面検知、環境メッシュ、オクルージョン）は、[検討メモ](#今後の検討)の順で追加していきます。
 
 ## 共通の土台
 
@@ -60,7 +63,7 @@ samples/<name>/               sample.tscn / sample.gd / README.md
 samples/samples.tres          サンプル一覧の定義
 project.godot                 Godot 4.6 / Compatibility / OpenXR設定
 export_presets.cfg            Quest / PICO / VIVE / Android XRのpreset
-openxr_action_map.tres        aim / gripポーズと`select`アクション
+openxr_action_map.tres        aim / gripポーズと`select` / `grab` / `haptic`
 docs/                         ビルド手順、トラブルシューティング、検討メモ
 addons/godotopenxrvendors/    Meta/PICO/VIVE向けOpenXR Vendors plugin
 ```
@@ -84,11 +87,9 @@ addons/godotopenxrvendors/    Meta/PICO/VIVE向けOpenXR Vendors plugin
 
 ## 今後の検討
 
-いずれも実装はまだ入っていません。
-
-- [docs/samples_plan.md](docs/samples_plan.md): サンプル集としての構成、サンプル一覧、進め方
-- [docs/mr_toolkit_design.md](docs/mr_toolkit_design.md): MRTK3相当のインタラクション基盤（近接・遠隔のポインタ、押せるボタン、掴んで動かす操作、追従メニュー）
-- [docs/spatial_understanding_design.md](docs/spatial_understanding_design.md): AR Foundation相当の空間認識（床面検知、環境メッシュ、セグメンテーション、アンカー）
+- [docs/samples_plan.md](docs/samples_plan.md): サンプル集としての構成、サンプル一覧、進め方（一部は実装済み）
+- [docs/mr_toolkit_design.md](docs/mr_toolkit_design.md): MRTK3相当のインタラクション基盤の設計案（共通化はサンプルからの抽出で行う方針です）
+- [docs/spatial_understanding_design.md](docs/spatial_understanding_design.md): AR Foundation相当の空間認識（床面検知、環境メッシュ、セグメンテーション、アンカー）。未実装
 
 ## 既知の制約
 
