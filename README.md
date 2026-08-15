@@ -17,8 +17,10 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの、Mixed Re
 | [押せるボタン](samples/poke_button/) | 指先やコントローラーで押し込む。押し込み量から見た目と判定を作る | 全機種 |
 | [遠隔ポインタ](samples/ray_pointer/) | レイで離れた対象を選ぶ。近づいたら近接へ切り替える | 全機種 |
 | [掴んで動かす](samples/grab_object/) | pinch / gripで掴み、掴んだ瞬間の相対姿勢を手に掛け直す | 全機種 |
+| [2D UIパネル](samples/ui_panel_2d/) | SubViewportの2D UIを3Dの板に貼り、ポインタで操作する | 全機種 |
+| [ハンドメニュー](samples/hand_menu/) | 手のひらを自分へ向けるとメニューが出る（Solver相当） | 全機種 |
 
-2D UIパネル、追従メニュー、両手操作、空間認識（床面検知、環境メッシュ、オクルージョン）は、[検討メモ](#今後の検討)の順で追加していきます。
+両手操作と、空間認識（床面検知、環境メッシュ、オクルージョン）は、[検討メモ](#今後の検討)の順で追加していきます。
 
 ## 共通の土台
 

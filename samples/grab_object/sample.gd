@@ -21,15 +21,12 @@ const CUBE_PITCH := 0.18
 const CUBE_SIZE := 0.09
 ## 掴める距離。手の代表点からこの範囲にある中でいちばん近いものを掴む。
 const GRAB_DISTANCE := 0.14
-const PINCH_ENTER := 0.022
-const PINCH_EXIT := 0.032
 
 var _stage: MRStage
 var _cubes: Array[MeshInstance3D] = []
 ## 手ごとに、掴んでいるオブジェクトの添字と、掴んだ時点の相対姿勢。
 var _held: Array[int] = [-1, -1]
 var _offsets: Array[Transform3D] = [Transform3D.IDENTITY, Transform3D.IDENTITY]
-var _pinching: Array[bool] = [false, false]
 
 @onready var _status: Label3D = $Status
 
@@ -107,24 +104,11 @@ func _get_grab_pose(hand: int) -> Variant:
 
 
 func _is_grabbing(hand: int) -> bool:
+	# 手ならpinch（判定は`shared/mr_stage.gd`）、コントローラーならgripを握る。
 	if _stage.is_hand_tracking_active(hand):
-		return _is_pinching(hand)
+		return _stage.is_pinching(hand)
 
 	return _stage.get_grip_controller(hand).is_button_pressed(&"grab")
-
-
-func _is_pinching(hand: int) -> bool:
-	var tracker := _stage.get_hand_tracker(hand)
-	if tracker == null:
-		_pinching[hand] = false
-		return false
-
-	var thumb := tracker.get_hand_joint_transform(XRHandTracker.HAND_JOINT_THUMB_TIP).origin
-	var index := tracker.get_hand_joint_transform(XRHandTracker.HAND_JOINT_INDEX_FINGER_TIP).origin
-	# 掴む閾値より離す閾値を広く取り、指の震えで落とさないようにする。
-	var threshold := PINCH_EXIT if _pinching[hand] else PINCH_ENTER
-	_pinching[hand] = thumb.distance_to(index) < threshold
-	return _pinching[hand]
 
 
 func _create_cube(index: int, position: Vector3) -> MeshInstance3D:

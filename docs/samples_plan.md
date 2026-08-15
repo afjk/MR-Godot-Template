@@ -1,6 +1,6 @@
 # サンプル集としての構成 検討メモ
 
-このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1（骨格と基礎4サンプル）とP2の前半（押せるボタン・遠隔ポインタ・掴んで動かす）は実装済みです。
+このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1（骨格と基礎4サンプル）とP2（インタラクション5サンプル）は実装済みです。
 
 関連: [インタラクション基盤の検討](mr_toolkit_design.md) / [空間認識の検討](spatial_understanding_design.md)
 
@@ -35,6 +35,11 @@ samples/
   hand_tracking/
   controller_models/
   session_lifecycle/
+  poke_button/
+  ray_pointer/
+  grab_object/
+  ui_panel_2d/
+  hand_menu/
   samples.tres            一覧の定義（タイトル・説明・対応端末・シーンパス）
 docs/                     ビルド手順、トラブルシューティング、検討メモ
 export_presets.cfg        4機種分。APKは全サンプル入りの1本
@@ -157,12 +162,14 @@ READMEの冒頭で「どのサンプルが何を示すか」が一覧できる�
 
 ここは新機能ゼロで、既存の動作を壊していないことが確認しやすい段階です。最初にやるのが安全です。
 
-### P2: インタラクション ※前半実装済み
+### P2: インタラクション ※実装済み
 
 - `poke_button` → `ray_pointer` → `grab_object` → `ui_panel_2d` の順
 - 3つ目あたりで「共通化すべきもの」（interactor/interactableの原型）が見えてくるので、**そこで初めて`shared/interaction/`へ抽出**する
 
-> 実装時のメモ: 3サンプルを書いた時点で重複したのは、pinch判定（2箇所）と「関節の位置を`origin.global_transform`でワールドへ移す」1行だけでした。**どちらも抽出していません。** 前者はpinchの閾値がサンプルの主題そのもので、共通側へ隠すと読めなくなるためです。後者は1行で、抽象化する価値がありません。`shared/interaction/`が要るのは、interactableを「登録して調停する」段階（`ui_panel_2d`と`hand_menu`）からだと判断しました。
+> 実装時のメモ: 3サンプル（`poke_button`・`ray_pointer`・`grab_object`）の時点では、重複はpinch判定2箇所だけだったので何も抽出しませんでした。`ui_panel_2d`と`hand_menu`を足した時点で**pinch判定が5箇所**（ランチャーを含む）になったため、規約どおり`MRStage.is_pinching()` / `is_pinch_just_started()`として共通化しました。閾値も1箇所にまとまり、機種ごとの調整がやりやすくなります。
+>
+> 一方、**`shared/interaction/`はまだ作っていません。** interactor/interactableの抽象が要るのは「複数のinteractableを登録して調停する」段階からで、5サンプルはいずれも対象が数個で、それぞれの当たり判定が主題そのものでした。近接と遠隔の調停は`ray_pointer`の中に最小の形で入っています。
 
 ### P3: 空間認識
 

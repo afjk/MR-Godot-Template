@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
@@ -59,6 +59,22 @@ scene = "res://samples/grab_object/sample.tscn"
 devices = 15
 notes = ""
 
+[sub_resource type="Resource" id="Sample_ui_panel_2d"]
+script = ExtResource("2_info")
+title = "2D UIパネル"
+description = "SubViewportの2D UIを3Dの板に貼り、ポインタをマウス入力として流し込む。"
+scene = "res://samples/ui_panel_2d/sample.tscn"
+devices = 15
+notes = ""
+
+[sub_resource type="Resource" id="Sample_hand_menu"]
+script = ExtResource("2_info")
+title = "ハンドメニュー"
+description = "手のひらを自分へ向けるとメニューが出る。Solver（HandConstraint）相当。"
+scene = "res://samples/hand_menu/sample.tscn"
+devices = 15
+notes = "Hand Trackingが必要"
+
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object")])
+samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu")])

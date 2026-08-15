@@ -22,6 +22,9 @@ const HAND_TRACKER_PATHS: Array[StringName] = [
 	&"/user/hand_tracker/left",
 	&"/user/hand_tracker/right",
 ]
+## pinchを始めた／離したとみなす指先の距離。離す側を広く取り、指の震えでばたつかせない。
+const PINCH_ENTER := 0.022
+const PINCH_EXIT := 0.032
 ## これらのsourceは「runtimeが光学式の手を報告していない」ことを意味する。
 const INACTIVE_HAND_SOURCES: Array[int] = [
 	XRHandTracker.HAND_TRACKING_SOURCE_CONTROLLER,
@@ -40,6 +43,8 @@ var is_mr_active := false
 var fallback_reason := ""
 
 var _xr_is_focussed := false
+var _pinching: Array[bool] = [false, false]
+var _pinch_started: Array[bool] = [false, false]
 
 @onready var origin: XROrigin3D = $XROrigin3D
 @onready var camera: XRCamera3D = $XROrigin3D/XRCamera3D
@@ -82,6 +87,12 @@ func _ready() -> void:
 
 	# セッションが既に始まっている場合、session_begunはもう来ないので今applyする。
 	_apply_best_refresh_rate()
+
+
+func _process(_delta: float) -> void:
+	# pinchは複数のサンプルが同時に見るので、1フレームに1回ここで更新する。
+	for hand: int in [Hand.LEFT, Hand.RIGHT]:
+		_update_pinch(hand)
 
 
 ## その端末で使えるenvironment blend modeの一覧。
@@ -127,6 +138,31 @@ func is_hand_tracking_active(hand: int) -> bool:
 		return false
 
 	return tracker.hand_tracking_source not in INACTIVE_HAND_SOURCES
+
+
+## 親指と人差し指がくっついているか。閾値にヒステリシスを入れてある。
+func is_pinching(hand: int) -> bool:
+	return _pinching[hand]
+
+
+## このフレームでpinchが始まったか。ボタンの押下に相当する。
+func is_pinch_just_started(hand: int) -> bool:
+	return _pinch_started[hand]
+
+
+func _update_pinch(hand: int) -> void:
+	var tracker := get_hand_tracker(hand)
+	if tracker == null or not is_hand_tracking_active(hand):
+		_pinching[hand] = false
+		_pinch_started[hand] = false
+		return
+
+	var thumb := tracker.get_hand_joint_transform(XRHandTracker.HAND_JOINT_THUMB_TIP).origin
+	var index := tracker.get_hand_joint_transform(XRHandTracker.HAND_JOINT_INDEX_FINGER_TIP).origin
+	var threshold := PINCH_EXIT if _pinching[hand] else PINCH_ENTER
+	var pinching := thumb.distance_to(index) < threshold
+	_pinch_started[hand] = pinching and not _pinching[hand]
+	_pinching[hand] = pinching
 
 
 func _configure_foveation() -> void:

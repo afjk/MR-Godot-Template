@@ -18,8 +18,6 @@ const TARGET_LAYER := 16
 const RAY_LENGTH := 4.0
 ## 手がこの距離まで近づいたら近接扱いにしてレイを消す。
 const NEAR_DISTANCE := 0.25
-const PINCH_ENTER := 0.022
-const PINCH_EXIT := 0.032
 
 const COLOR_IDLE := Color(0.12, 0.20, 0.30, 0.95)
 const COLOR_HOVER := Color(0.16, 0.42, 0.72, 0.98)
@@ -30,7 +28,6 @@ var _targets: Array[MeshInstance3D] = []
 var _counts: Array[int] = []
 var _hovered := -1
 var _near := false
-var _pinching: Array[bool] = [false, false]
 var _was_pressed := false
 
 @onready var _status: Label3D = $Status
@@ -150,23 +147,10 @@ func _is_select_pressed() -> bool:
 	for hand: int in [MRStage.Hand.LEFT, MRStage.Hand.RIGHT]:
 		if _stage.get_aim_controller(hand).is_button_pressed(&"select"):
 			return true
-		if _is_pinching(hand):
+		if _stage.is_pinching(hand):
 			return true
 
 	return false
-
-
-func _is_pinching(hand: int) -> bool:
-	var tracker := _stage.get_hand_tracker(hand)
-	if tracker == null or not _stage.is_hand_tracking_active(hand):
-		_pinching[hand] = false
-		return false
-
-	var thumb := tracker.get_hand_joint_transform(XRHandTracker.HAND_JOINT_THUMB_TIP).origin
-	var index := tracker.get_hand_joint_transform(XRHandTracker.HAND_JOINT_INDEX_FINGER_TIP).origin
-	var threshold := PINCH_EXIT if _pinching[hand] else PINCH_ENTER
-	_pinching[hand] = thumb.distance_to(index) < threshold
-	return _pinching[hand]
 
 
 func _create_target(title: String, position: Vector3) -> MeshInstance3D:

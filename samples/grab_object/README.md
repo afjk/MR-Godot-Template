@@ -19,7 +19,7 @@ pinch（手）またはgrip（コントローラー）でオブジェクトを�
 
 ## 必要な設定
 
-- 手で掴むには`xr/openxr/extensions/hand_tracking=true`
+- 手で掴むには`xr/openxr/extensions/hand_tracking=true`（pinchの判定と閾値は`shared/mr_stage.gd`）
 - コントローラーは`openxr_action_map.tres`の`grab`アクション（`squeeze/value`）
 
 ## 対応端末
