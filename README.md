@@ -22,8 +22,10 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの、Mixed Re
 | [両手操作](samples/two_hand_manipulation/) | 両手で掴んで回転・拡縮する。倍率の制約つき | 全機種 |
 | [平面検出](samples/plane_detection/) | 検出された平面（床・壁・天井・机）を可視化する。ARPlaneManager相当 | runtime次第 |
 | [床面検知](samples/floor_detection/) | 検出された平面から床を選ぶ。取れなければLocal Floorの仮定 | 全機種（精度は端末差） |
+| [リアルタイム平面推定](samples/realtime_planes/) | 深度マップから、見ている先の面をその場で推定する。スキャン不要 | Quest 3 |
+| [深度オクルージョン](samples/occlusion_depth/) | 実物が仮想物体をリアルタイムに隠す。手や動く物にも効く | Quest 3 |
 
-環境メッシュ、オクルージョン、アンカーの永続化は、[検討メモ](#今後の検討)の順で追加していきます。
+環境メッシュとアンカーの永続化は、[検討メモ](#今後の検討)の順で追加していきます。
 
 ## 共通の土台
 
@@ -99,7 +101,7 @@ addons/godotopenxrvendors/    Meta/PICO/VIVE向けOpenXR Vendors plugin
 ## 既知の制約
 
 - パススルー映像はMeta、PICO、またはVIVEのOpenXR runtimeが合成します。アプリからカメラ画像のピクセルやテクスチャ自体へはアクセスできません。
-- 空間認識は平面検出と床面検知までです。環境メッシュ、オクルージョン、anchorsの永続化は実装していません。
+- 空間認識は平面検出・床面検知・深度によるリアルタイム推定とオクルージョンまでです。環境メッシュとanchorsの永続化は実装していません。
 - Hand Trackingは関節データの取得とデバッグ表示のみです。スキニング済みハンドモデルやジェスチャー操作は含みません。
 - MRにはOpenXR Vendors pluginと、対象端末専用のExport presetが必要です。Meta、PICO、Khronos loaderを同じpresetで同時に有効化しないでください。
 - 実機の対応blend modeを実行時に確認し、Alpha blend非対応ならMRを開始しません。

@@ -11,6 +11,10 @@ extends Node3D
 ## 平面は`XRServer`にanchor種別のトラッカーとして現れます。アプリ側は
 ## トラッカーの増減を購読し、`XRAnchor3D`で位置を合わせるだけです。
 ## メッシュと当たり判定は`OpenXRPlaneTracker`が作ってくれます。
+##
+## 注意: このAPIが返すのは、多くの端末では**事前にスキャンした部屋のデータ**です。
+## Quest 3ではSpace Setupの結果になり、机を動かしても平面は動きません。
+## その場で検出したい場合は`realtime_planes`サンプルを参照してください。
 
 const LABEL_COLORS := {
 	"floor": Color(0.25, 0.85, 0.45, 0.30),

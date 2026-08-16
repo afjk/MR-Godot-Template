@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=15 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
@@ -99,6 +99,22 @@ scene = "res://samples/floor_detection/sample.tscn"
 devices = 15
 notes = "Quest 3はSpace Setupが必要"
 
+[sub_resource type="Resource" id="Sample_realtime_planes"]
+script = ExtResource("2_info")
+title = "リアルタイム平面推定"
+description = "深度マップから、見ている先の面をその場で推定する。事前スキャン不要。"
+scene = "res://samples/realtime_planes/sample.tscn"
+devices = 1
+notes = "Quest 3の環境深度"
+
+[sub_resource type="Resource" id="Sample_occlusion_depth"]
+script = ExtResource("2_info")
+title = "深度オクルージョン"
+description = "実物が仮想物体をリアルタイムに隠す。手や動く物にも効く。"
+scene = "res://samples/occlusion_depth/sample.tscn"
+devices = 1
+notes = "Quest 3の環境深度"
+
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection")])
+samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_realtime_planes"), SubResource("Sample_occlusion_depth")])

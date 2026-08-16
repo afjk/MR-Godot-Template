@@ -164,7 +164,7 @@ var confidence: float
 | 層 | 内容 | 実現手段 | 対応 | 判断 |
 | --- | --- | --- | --- | --- |
 | **A. 意味ラベル** | 平面・物体に「床／壁／机／ソファ」等の意味を付ける | Meta Sceneのsemantic label、Android XRのplane label＋`OpenXRAndroidTrackableObjectTracker` | Quest 3 / Android XR | **採用** |
-| **B. 深度オクルージョン** | 実物（手・人・家具）が仮想物体を隠す | `OpenXRMetaEnvironmentDepth` / `OpenXRAndroidEnvironmentDepth` | Quest 3 / Android XR | **採用** |
+| **B. 深度オクルージョン** | 実物（手・人・家具）が仮想物体を隠す | `OpenXRMetaEnvironmentDepth` / `OpenXRAndroidEnvironmentDepth` | Quest 3 / Android XR | **採用**（`samples/occlusion_depth/`で実装済み） |
 | **C. ピクセル単位** | 任意物体・人物のマスクを画素単位で得る | Passthrough Camera API（Camera2）＋端末上のML推論 | Quest 3のみ | 研究枠 |
 
 ### A: 意味ラベル（安価で用途が広い）
@@ -174,6 +174,8 @@ var confidence: float
 ### B: 深度オクルージョン（見た目への寄与が最大）
 
 環境深度マップで仮想物体を遮蔽します。メッシュによるオクルージョン（第6節）との違いは、**動くもの（手・人・持ち込まれた物）にも効く**ことです。Vendors pluginはCPU側から深度マップを取得するメソッドも持っています。
+
+> 実装メモ: Metaについては`OpenXRMetaEnvironmentDepth`（`VisualInstance3D`）を置くだけで遮蔽が効きました（`samples/occlusion_depth/`）。シェーダーを書く必要はありません。CPU側の`get_environment_depth_map_async()`は、事前スキャンに頼らないリアルタイムの平面推定に使えます（`samples/realtime_planes/`）。**平面APIが返すデータが事前スキャンかリアルタイムかはruntime依存**で、Quest 3では前者です。この違いは利用者にとって大きいので、サンプルを分けています。
 
 - 実装は「深度テクスチャを受け取り、シーンの深度と比較して破棄する」シェーダー経路になります
 - **Compatibility rendererで深度テクスチャをシェーダーへ渡せるか**が最大の技術的未確認点です。ここが通らない場合、Bはメッシュオクルージョン止まりになります

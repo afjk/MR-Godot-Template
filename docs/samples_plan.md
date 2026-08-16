@@ -1,6 +1,6 @@
 # サンプル集としての構成 検討メモ
 
-このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1（骨格と基礎4サンプル）とP2（インタラクション6サンプル）は実装済みで、P3（空間認識）は`plane_detection`と`floor_detection`まで進んでいます。
+このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1（骨格と基礎4サンプル）とP2（インタラクション6サンプル）は実装済みで、P3（空間認識）は平面検出・床面検知・深度系（リアルタイム推定とオクルージョン）まで進んでいます。
 
 関連: [インタラクション基盤の検討](mr_toolkit_design.md) / [空間認識の検討](spatial_understanding_design.md)
 
@@ -43,6 +43,8 @@ samples/
   two_hand_manipulation/
   plane_detection/
   floor_detection/
+  realtime_planes/
+  occlusion_depth/
   samples.tres            一覧の定義（タイトル・説明・対応端末・シーンパス）
 docs/                     ビルド手順、トラブルシューティング、検討メモ
 export_presets.cfg        4機種分。APKは全サンプル入りの1本
@@ -106,6 +108,7 @@ export_presets.cfg        4機種分。APKは全サンプル入りの1本
 | `floor_detection` | 検出結果から床を選ぶ。取れなければLocal Floorの仮定 | 全機種（精度は端末差） |
 | `scene_mesh` | 部屋メッシュの取得、collision、可視化 | Quest 3 / Android XR |
 | `occlusion_mesh` | メッシュで実物が仮想物体を隠す（深度書き込み＋透明） | Quest 3 / Android XR |
+| `realtime_planes` | 深度マップから見ている先の面をその場で推定 | Quest 3 |
 | `occlusion_depth` | 環境深度による動的オクルージョン（手・人にも効く） | Quest 3 / Android XR |
 | `spatial_anchor` | アンカーの生成・永続化・再読込 | Quest 3 / Android XR |
 | `marker_tracking` | QRマーカーを基準に配置 | 端末次第 |
@@ -176,14 +179,18 @@ READMEの冒頭で「どのサンプルが何を示すか」が一覧できる�
 >
 > 一方、**`shared/interaction/`はまだ作っていません。** interactor/interactableの抽象が要るのは「複数のinteractableを登録して調停する」段階からで、5サンプルはいずれも対象が数個で、それぞれの当たり判定が主題そのものでした。近接と遠隔の調停は`ray_pointer`の中に最小の形で入っています。
 
-### P3: 空間認識 ※`plane_detection`と`floor_detection`まで実装済み
+### P3: 空間認識 ※深度系まで実装済み（残りは環境メッシュとアンカー）
 
 - `plane_detection` → `floor_detection` → `scene_mesh` → `occlusion_mesh` → `occlusion_depth`
 - 端末差が大きいので、非対応端末での見え方を毎回確認する
 
 > 実装時のメモ: 最初の`floor_detection`は、Meta Scene APIと「指先でpinchした高さを床にする」手動設定の組み合わせでした。**手動設定は検知ではない**という指摘を受けて作り直しています。Godot 4.6 coreに`OpenXRPlaneTracker`（`XR_EXT_spatial_plane_tracking`）があり、これがAR Foundationの`ARPlaneManager`に当たるベンダー非依存の経路です。
 >
-> いまは検出そのものを見せる`plane_detection`と、そこから床を1つ選ぶ`floor_detection`に分けています。`project.godot`には`xr/openxr/extensions/spatial_entity/*`を追加しました。空間認識の層（`MRGTSpatialManager`相当）は、core・Meta・Android XRの経路が2つ以上そろい、正規化する意味が出てから作ります。
+> いまは検出そのものを見せる`plane_detection`と、そこから床を1つ選ぶ`floor_detection`に分けています。`project.godot`には`xr/openxr/extensions/spatial_entity/*`を追加しました。
+>
+> さらに実機確認で「これは事前スキャンのデータを読むタイプで、リアルタイム検出が欲しい」という指摘を受けました。**平面APIが返すデータの出所（事前スキャンか、その場の検出か）はruntime依存で、OpenXRの仕様は区別しません。** Quest 3ではSpace Setupの結果です。その場の検出が要る場合は環境深度から自分で作るしかないため、`realtime_planes`（深度マップから面を推定）と`occlusion_depth`（深度によるリアルタイム遮蔽）を追加しました。この2本はQuest 3限定です。
+>
+> 空間認識の層（`MRGTSpatialManager`相当）は、core・Meta・Android XRの経路が2つ以上そろい、正規化する意味が出てから作ります。
 
 ### P4: 表現・性能、toolkit化の判断
 

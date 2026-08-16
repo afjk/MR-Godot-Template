@@ -55,5 +55,6 @@ openxr/extensions/spatial_entity/enable_plane_tracking=true
 openxr/extensions/spatial_entity/enable_builtin_plane_detection=true
 openxr/extensions/meta/anchor_api=true
 openxr/extensions/meta/scene_api=true
+openxr/extensions/meta/environment_depth=true
 openxr/extensions/htc/passthrough=true
 shaders/enabled=true
