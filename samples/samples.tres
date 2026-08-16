@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=14 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
@@ -83,14 +83,22 @@ scene = "res://samples/two_hand_manipulation/sample.tscn"
 devices = 15
 notes = ""
 
+[sub_resource type="Resource" id="Sample_plane_detection"]
+script = ExtResource("2_info")
+title = "平面検出"
+description = "runtimeが検出した平面（床・壁・天井・机）を可視化する。ARPlaneManager相当。"
+scene = "res://samples/plane_detection/sample.tscn"
+devices = 15
+notes = "runtimeが平面検出を公開する場合のみ"
+
 [sub_resource type="Resource" id="Sample_floor_detection"]
 script = ExtResource("2_info")
 title = "床面検知"
-description = "平面API → 手で合わせる → Local Floorの3段構えで床の高さを決める。"
+description = "検出された平面から床を選び、取れない端末ではLocal Floorの仮定に落とす。"
 scene = "res://samples/floor_detection/sample.tscn"
 devices = 15
 notes = "Quest 3はSpace Setupが必要"
 
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_floor_detection")])
+samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection")])

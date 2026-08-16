@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://samples/plane_detection/sample.gd" id="1_sample"]
+
+[node name="PlaneDetectionSample" type="Node3D"]
+script = ExtResource("1_sample")
+
+[node name="Status" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -1.1)
+pixel_size = 0.0007
+text = ""
+font_size = 34
+outline_size = 18

@@ -25,7 +25,7 @@ AR Foundationの`ARPlaneManager`のような「どの端末でも同じAPI」は
 
 | AR Foundation | 相当するもの（Godot） | 状況 |
 | --- | --- | --- |
-| `ARPlaneManager` | core Spatial Entities（plane）／`OpenXRAndroidTrackablePlaneTracker`／Metaの`OpenXRFbSceneManager` | 3経路あり、要正規化 |
+| `ARPlaneManager` | core Spatial Entities（`OpenXRPlaneTracker`）／`OpenXRAndroidTrackablePlaneTracker`／Metaの`OpenXRFbSceneManager` | 3経路あり、要正規化。core経路は`samples/plane_detection/`で実装済み |
 | `ARMeshManager` | `OpenXRAndroidSceneMeshing`／`OpenXRMetaSpatialEntityMeshExtension` | Quest 3とAndroid XRのみ |
 | `AROcclusionManager`（environment depth） | `OpenXRMetaEnvironmentDepth`／`OpenXRAndroidEnvironmentDepth` | Quest 3とAndroid XRのみ |
 | `AROcclusionManager`（human segmentation） | **相当機能なし** | iOS/ARKit固有。standalone MRには無い（第7節C） |
@@ -114,9 +114,11 @@ MRで最初に必要になり、かつ全機種で何かしら答えを返せる
 
 3段構えです。
 
-1. **平面API**: `FLOOR`ラベルの平面。Quest 3（Scene）とAndroid XR（Trackables）で取れる
+1. **平面API**: `floor`ラベルの平面。coreの`OpenXRPlaneTracker`、Metaのscene entity、Android XRのTrackablesのいずれか
 2. **環境メッシュ**: 平面が無い場合、メッシュ内の最下位の水平面を推定
-3. **Local Floor**: どちらも無い場合、reference spaceがLocal Floorなので**`y = 0`が床**。本テンプレートは既に`xr/openxr/reference_space=2`でこれを使っています
+3. **Local Floor**: どちらも無い場合、reference spaceがLocal Floorなので**`y = 0`が床**。このプロジェクトは既に`xr/openxr/reference_space=2`でこれを使っています
+
+> 実装メモ（`samples/floor_detection/`）: 1と3、およびMetaのscene entity経路を実装しました。2（環境メッシュからの推定）は、メッシュ取得そのものが未実装のため入っていません。**「指先で高さを指定する」手動設定は検知ではない**ため、このサンプルからは外しています。アプリ側で用意するのは構いませんが、床面検知の説明に混ぜると誤解を招きます。
 
 ```gdscript
 class_name MRGTFloor

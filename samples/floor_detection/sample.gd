@@ -1,27 +1,30 @@
 extends Node3D
 
-## 床面検知: 床の高さを3段構えで決めるサンプル。
+## 床面検知: 検出された平面から床を選び、無ければ仮定に落とすサンプル。
 ##
-## 必要なもの: Quest 3で平面を使うには`xr/openxr/extensions/meta/scene_api=true`と、
-##   端末側でのSpace Setup（部屋のスキャン）
-## 対応端末: 全機種（Quest 3は平面API、それ以外はLocal Floorの仮定になります）
+## 必要なもの: `xr/openxr/extensions/spatial_entity/*`（設定済み）。Quest 3で
+##   Meta経路を使う場合は`meta/scene_api`と、端末側のSpace Setup（部屋のスキャン）
+## 対応端末: 検出はruntime次第。取れない端末では仮定に落ちます
 ##
-## MRで最初に要るのが床の高さです。取り方は端末で違うので、上から順に試します。
-##   1. 平面API: Metaのscene entityから`FLOOR`ラベルの高さを読む
-##   2. 手で合わせる: 実際の床に手を置いてpinchすると、その高さを床とみなす
-##   3. Local Floor: reference spaceがLocal Floorなので、XROrigin3Dのy=0が床
+## 床の高さは取り方が端末で違うので、上から順に試します。
+##   1. 平面検出（core）: `OpenXRPlaneTracker`から`floor`ラベルの平面を探す
+##   2. Meta Scene: Quest 3の部屋スキャン結果から`FLOOR`ラベルのanchorを読む
+##   3. Local Floor: reference spaceがLocal Floorなので、XROrigin3Dのy=0を床とみなす
 ##
-## 3段目は「検知」ではなく「仮定」です。どの段で得たかを`_source`として持ち、
-## 画面にも出します。精度が要る処理は、出所を見て分岐できるようにするためです。
+## **3段目は検知ではなく仮定です。** どの段で得たかを`_source`として持ち、画面にも
+## 出します。精度が要る処理は、出所を見て分岐できるようにするためです。
+## 検出そのものを見たい場合は`plane_detection`サンプルを開いてください。
 
-const FLOOR_LABEL := "FLOOR"
-## 平面APIを問い合わせる間隔。毎フレーム引く必要はない。
+const META_FLOOR_LABEL := "FLOOR"
+## 平面とscene entityを問い合わせる間隔。毎フレーム引く必要はない。
 const POLL_INTERVAL := 0.5
 const MARKER_SIZE := 0.12
 
 var _stage: MRStage
-## OpenXRFbSceneManager。pluginが無い端末ではnullのまま。
+## Meta経路の`OpenXRFbSceneManager`。pluginが無い端末ではnullのまま。
 var _manager: Node
+## 床として採用した平面に貼り付けるアンカー。coreの平面検出で使う。
+var _floor_anchor: XRAnchor3D
 var _source := "local_floor"
 var _height := 0.0
 var _poll_timer := 0.0
@@ -38,13 +41,17 @@ func _ready() -> void:
 
 	# 3段目。Local Floorのy=0がそのまま床の高さになる。
 	_height = _stage.origin.global_position.y
+
+	_floor_anchor = XRAnchor3D.new()
+	_stage.origin.add_child(_floor_anchor)
 	_setup_scene_manager()
 
 
 func _exit_tree() -> void:
-	# リグにぶら下げたので、閉じるときに自分で片付ける。
-	if is_instance_valid(_manager):
-		_manager.queue_free()
+	# リグにぶら下げたものは自分で片付ける。
+	for node: Node in [_manager, _floor_anchor]:
+		if is_instance_valid(node):
+			node.queue_free()
 
 
 func _process(delta: float) -> void:
@@ -54,31 +61,52 @@ func _process(delta: float) -> void:
 	_poll_timer -= delta
 	if _poll_timer <= 0.0:
 		_poll_timer = POLL_INTERVAL
-		_update_from_scene()
+		if not _update_from_planes():
+			_update_from_meta_scene()
 
-	_calibrate_with_pinch()
+	if _source == "plane" and _floor_anchor.tracker != &"":
+		# 平面は動くことがある。採用した平面の高さを毎フレーム追う。
+		_height = _floor_anchor.global_position.y
+
 	_apply()
 	_update_status()
 
 
-func _setup_scene_manager() -> void:
-	# pluginが無い環境でもこのサンプルが読めるよう、class名から生成する。
-	if not ClassDB.class_exists(&"OpenXRFbSceneManager"):
-		_message = "Meta Scene APIがありません"
-		return
+## 1段目。coreの平面検出から床を選ぶ。見つかればtrue。
+func _update_from_planes() -> bool:
+	var best_name := &""
+	var best_area := 0.0
+	for tracker_name in XRServer.get_trackers(XRServer.TRACKER_ANCHOR):
+		var tracker := XRServer.get_tracker(tracker_name) as OpenXRPlaneTracker
+		if tracker == null:
+			continue
 
-	_manager = ClassDB.instantiate(&"OpenXRFbSceneManager") as Node
-	if _manager == null:
-		return
+		if tracker.plane_label.to_lower() == "floor":
+			best_name = tracker_name
+			break
 
-	_manager.set(&"auto_create", true)
-	_manager.set(&"visible", false)
-	_stage.origin.add_child(_manager)
-	_manager.connect(&"openxr_fb_scene_data_missing", _on_scene_data_missing)
+		# ラベルを出さないruntimeもある。上向きの水平面のうち最も広いものを床とみなす。
+		var alignment := OpenXRSpatialComponentPlaneAlignmentList.PLANE_ALIGNMENT_HORIZONTAL_UPWARD
+		if tracker.plane_alignment != alignment:
+			continue
+
+		var area := tracker.bounds_size.x * tracker.bounds_size.y
+		if area > best_area:
+			best_area = area
+			best_name = tracker_name
+
+	if best_name == &"":
+		return false
+
+	_floor_anchor.tracker = best_name
+	_source = "plane"
+	_message = ""
+	return true
 
 
-func _update_from_scene() -> void:
-	if _manager == null:
+## 2段目。Metaの部屋スキャン結果から床を読む。
+func _update_from_meta_scene() -> void:
+	if _manager == null or _source == "plane":
 		return
 
 	if not bool(_manager.call(&"are_scene_anchors_created")):
@@ -92,7 +120,7 @@ func _update_from_scene() -> void:
 			continue
 
 		var labels: PackedStringArray = entity.call(&"get_semantic_labels")
-		if FLOOR_LABEL not in labels:
+		if META_FLOOR_LABEL not in labels:
 			continue
 
 		var anchor := _manager.call(&"get_anchor_node", uuid) as Node3D
@@ -103,6 +131,21 @@ func _update_from_scene() -> void:
 		_source = "meta_scene"
 		_message = ""
 		return
+
+
+func _setup_scene_manager() -> void:
+	# pluginが無い環境でもこのサンプルが読めるよう、class名から生成する。
+	if not ClassDB.class_exists(&"OpenXRFbSceneManager"):
+		return
+
+	_manager = ClassDB.instantiate(&"OpenXRFbSceneManager") as Node
+	if _manager == null:
+		return
+
+	_manager.set(&"auto_create", true)
+	_manager.set(&"visible", false)
+	_stage.origin.add_child(_manager)
+	_manager.connect(&"openxr_fb_scene_data_missing", _on_scene_data_missing)
 
 
 func _on_scene_data_missing() -> void:
@@ -120,26 +163,6 @@ func _on_scene_data_missing() -> void:
 	_message = "部屋のスキャンを開始しました"
 
 
-func _calibrate_with_pinch() -> void:
-	if _source == "meta_scene":
-		return
-
-	# 実際の床に指先を置いてpinchすると、その高さを床とみなす。
-	for hand: int in [MRStage.Hand.LEFT, MRStage.Hand.RIGHT]:
-		if not _stage.is_pinching(hand):
-			continue
-
-		var tracker := _stage.get_hand_tracker(hand)
-		var joint := XRHandTracker.HAND_JOINT_INDEX_FINGER_TIP
-		if not (tracker.get_hand_joint_flags(joint) & XRHandTracker.HAND_JOINT_FLAG_POSITION_VALID):
-			continue
-
-		var tip := _stage.origin.global_transform * tracker.get_hand_joint_transform(joint).origin
-		_height = tip.y
-		_source = "manual"
-		return
-
-
 func _apply() -> void:
 	# 床面の板と、その上に載る立方体。高さが合っていれば浮きも沈みもしない。
 	_plane.global_position = Vector3(
@@ -151,11 +174,11 @@ func _apply() -> void:
 
 
 func _update_status() -> void:
-	var source_text := "Local Floor（仮定）"
-	if _source == "meta_scene":
-		source_text = "平面API（FLOORラベル）"
-	elif _source == "manual":
-		source_text = "手で合わせた高さ"
+	var source_text := "Local Floorの仮定（検知ではありません）"
+	if _source == "plane":
+		source_text = "平面検出（core）"
+	elif _source == "meta_scene":
+		source_text = "Meta Sceneの部屋データ"
 
 	var relative := _height - _stage.origin.global_position.y
 	var lines: Array[String] = [
@@ -165,7 +188,5 @@ func _update_status() -> void:
 	]
 	if not _message.is_empty():
 		lines.append(_message)
-	if _source != "meta_scene":
-		lines.append("床に指先を置いてpinchすると合わせられます")
 
 	_status.text = "\n".join(lines)
