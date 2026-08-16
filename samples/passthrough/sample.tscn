@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://samples/passthrough/sample.gd" id="1_sample"]
+
+[sub_resource type="StandardMaterial3D" id="Material_cube"]
+albedo_color = Color(1, 0.31, 0.08, 1)
+metallic = 0.15
+roughness = 0.32
+
+[sub_resource type="BoxMesh" id="BoxMesh_cube"]
+material = SubResource("Material_cube")
+size = Vector3(0.36, 0.36, 0.36)
+
+[node name="PassthroughSample" type="Node3D"]
+script = ExtResource("1_sample")
+
+[node name="Cube" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -1.5)
+mesh = SubResource("BoxMesh_cube")
+
+[node name="Status" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.85, -1.5)
+pixel_size = 0.0008
+text = ""
+font_size = 36

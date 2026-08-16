@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
 
           # The OpenXR Vendors plugin is downloaded at build time and is not ours to lint.
-          git ls-files -z '*.gd' ':!:addons/**' > gdscript-files.txt
+          git ls-files -z '*.gd' ':!:addons/godotopenxrvendors/**' > gdscript-files.txt
 
           if [[ ! -s gdscript-files.txt ]]; then
             echo "No GDScript files to check."

@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
+[ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
+
+[sub_resource type="Resource" id="Sample_passthrough"]
+script = ExtResource("2_info")
+title = "パススルー"
+description = "Alpha environment blendでMRを開始し、blend modeを切り替えて違いを見る。"
+scene = "res://samples/passthrough/sample.tscn"
+devices = 15
+notes = ""
+
+[sub_resource type="Resource" id="Sample_hand_tracking"]
+script = ExtResource("2_info")
+title = "Hand Tracking"
+description = "XRHandTrackerの26関節を表示し、光学式とコントローラー由来を見分ける。"
+scene = "res://samples/hand_tracking/sample.tscn"
+devices = 15
+notes = "Hand Trackingの有効化が必要"
+
+[sub_resource type="Resource" id="Sample_controller_models"]
+script = ExtResource("2_info")
+title = "コントローラーモデル"
+description = "runtimeが提供するコントローラーの3Dモデルを表示し、非対応時は球へ落とす。"
+scene = "res://samples/controller_models/sample.tscn"
+devices = 15
+notes = "core / Metaの2経路"
+
+[sub_resource type="Resource" id="Sample_session_lifecycle"]
+script = ExtResource("2_info")
+title = "セッションの扱い"
+description = "リフレッシュレートの選択、フォーカス喪失と復帰、recenterの受け取り方。"
+scene = "res://samples/session_lifecycle/sample.tscn"
+devices = 15
+notes = ""
+
+[sub_resource type="Resource" id="Sample_poke_button"]
+script = ExtResource("2_info")
+title = "押せるボタン"
+description = "指先やコントローラーでボタンを押し込む。押し込み量から見た目と判定を作る。"
+scene = "res://samples/poke_button/sample.tscn"
+devices = 15
+notes = "指で押すにはHand Tracking"
+
+[sub_resource type="Resource" id="Sample_ray_pointer"]
+script = ExtResource("2_info")
+title = "遠隔ポインタ"
+description = "レイで離れた対象を選ぶ。手を近づけるとレイを引っ込めて近接に切り替える。"
+scene = "res://samples/ray_pointer/sample.tscn"
+devices = 15
+notes = ""
+
+[sub_resource type="Resource" id="Sample_grab_object"]
+script = ExtResource("2_info")
+title = "掴んで動かす"
+description = "pinchまたはgripで掴み、掴んだ瞬間の相対姿勢を手に掛け直して動かす。"
+scene = "res://samples/grab_object/sample.tscn"
+devices = 15
+notes = ""
+
+[sub_resource type="Resource" id="Sample_ui_panel_2d"]
+script = ExtResource("2_info")
+title = "2D UIパネル"
+description = "SubViewportの2D UIを3Dの板に貼り、ポインタをマウス入力として流し込む。"
+scene = "res://samples/ui_panel_2d/sample.tscn"
+devices = 15
+notes = ""
+
+[sub_resource type="Resource" id="Sample_hand_menu"]
+script = ExtResource("2_info")
+title = "ハンドメニュー"
+description = "手のひらを自分へ向けるとメニューが出る。Solver（HandConstraint）相当。"
+scene = "res://samples/hand_menu/sample.tscn"
+devices = 15
+notes = "Hand Trackingが必要"
+
+[resource]
+script = ExtResource("1_library")
+samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu")])

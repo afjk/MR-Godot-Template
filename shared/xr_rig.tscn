@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[node name="XROrigin3D" type="XROrigin3D"]
+
+[node name="XRCamera3D" type="XRCamera3D" parent="."]
+position = Vector3(0, 1.6, 0)
+current = true
+
+[node name="LeftController" type="XRController3D" parent="."]
+tracker = &"left_hand"
+pose = &"aim"
+
+[node name="RightController" type="XRController3D" parent="."]
+tracker = &"right_hand"
+pose = &"aim"
+
+[node name="LeftGripController" type="XRController3D" parent="."]
+tracker = &"left_hand"
+pose = &"grip"
+
+[node name="RightGripController" type="XRController3D" parent="."]
+tracker = &"right_hand"
+pose = &"grip"
