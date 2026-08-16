@@ -50,5 +50,7 @@ openxr/extensions/hand_tracking_controller_data_source=true
 openxr/extensions/hand_tracking_unobstructed_data_source=true
 openxr/extensions/meta/passthrough=true
 openxr/extensions/meta/render_model=true
+openxr/extensions/meta/anchor_api=true
+openxr/extensions/meta/scene_api=true
 openxr/extensions/htc/passthrough=true
 shaders/enabled=true

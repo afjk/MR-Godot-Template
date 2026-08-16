@@ -1,0 +1,32 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://samples/floor_detection/sample.gd" id="1_sample"]
+
+[sub_resource type="StandardMaterial3D" id="Material_plane"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.35, 0.75, 1, 0.22)
+cull_mode = 2
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
+material = SubResource("Material_plane")
+size = Vector2(3, 3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_marker"]
+size = Vector3(0.12, 0.12, 0.12)
+
+[node name="FloorDetectionSample" type="Node3D"]
+script = ExtResource("1_sample")
+
+[node name="FloorPlane" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_floor")
+
+[node name="Marker" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.8)
+mesh = SubResource("BoxMesh_marker")
+
+[node name="Status" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, -1)
+pixel_size = 0.0007
+text = ""
+font_size = 34

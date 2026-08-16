@@ -1,6 +1,6 @@
 # サンプル集としての構成 検討メモ
 
-このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1（骨格と基礎4サンプル）とP2（インタラクション5サンプル）は実装済みです。
+このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1（骨格と基礎4サンプル）とP2（インタラクション6サンプル）は実装済みで、P3（空間認識）は`floor_detection`まで進んでいます。
 
 関連: [インタラクション基盤の検討](mr_toolkit_design.md) / [空間認識の検討](spatial_understanding_design.md)
 
@@ -40,6 +40,8 @@ samples/
   grab_object/
   ui_panel_2d/
   hand_menu/
+  two_hand_manipulation/
+  floor_detection/
   samples.tres            一覧の定義（タイトル・説明・対応端末・シーンパス）
 docs/                     ビルド手順、トラブルシューティング、検討メモ
 export_presets.cfg        4機種分。APKは全サンプル入りの1本
@@ -173,10 +175,12 @@ READMEの冒頭で「どのサンプルが何を示すか」が一覧できる�
 >
 > 一方、**`shared/interaction/`はまだ作っていません。** interactor/interactableの抽象が要るのは「複数のinteractableを登録して調停する」段階からで、5サンプルはいずれも対象が数個で、それぞれの当たり判定が主題そのものでした。近接と遠隔の調停は`ray_pointer`の中に最小の形で入っています。
 
-### P3: 空間認識
+### P3: 空間認識 ※`floor_detection`まで実装済み
 
 - `floor_detection` → `plane_detection` → `scene_mesh` → `occlusion_mesh` → `occlusion_depth`
 - 端末差が大きいので、非対応端末での見え方を毎回確認する
+
+> 実装時のメモ: `floor_detection`でMeta Scene API（`OpenXRFbSceneManager`）を初めて使いました。`project.godot`に`xr/openxr/extensions/meta/scene_api`と`anchor_api`を追加しています。Meta以外の経路（Android XRのTrackables、coreのSpatial Entities）はまだ入っていないため、Quest 3以外はLocal Floorの仮定か手動合わせになります。空間認識の層（`MRGTSpatialManager`相当）は、経路が2つ以上そろってから作ります。
 
 ### P4: 表現・性能、toolkit化の判断
 

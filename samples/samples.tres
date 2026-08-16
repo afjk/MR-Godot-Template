@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=12 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
@@ -75,6 +75,22 @@ scene = "res://samples/hand_menu/sample.tscn"
 devices = 15
 notes = "Hand Trackingが必要"
 
+[sub_resource type="Resource" id="Sample_two_hand_manipulation"]
+script = ExtResource("2_info")
+title = "両手操作"
+description = "両手で掴んで回転・拡縮する。倍率の制約つき。片手なら移動と回転。"
+scene = "res://samples/two_hand_manipulation/sample.tscn"
+devices = 15
+notes = ""
+
+[sub_resource type="Resource" id="Sample_floor_detection"]
+script = ExtResource("2_info")
+title = "床面検知"
+description = "平面API → 手で合わせる → Local Floorの3段構えで床の高さを決める。"
+scene = "res://samples/floor_detection/sample.tscn"
+devices = 15
+notes = "Quest 3はSpace Setupが必要"
+
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu")])
+samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_floor_detection")])
