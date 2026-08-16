@@ -8,6 +8,9 @@ extends Node3D
 ## MRTKのInteraction Mode Managerに相当する「近接と遠隔の切り替え」を、
 ## 最小の形で入れています。手が対象の近くにあるときはレイを消し、近くのものを
 ## 直接選ぶ扱いにします。遠隔と近接が同時に効くと、意図しない方が反応します。
+##
+## レイをどこから飛ばすか（コントローラーか視線か）は`shared/mr_stage.gd`が持ちます。
+## 全サンプルとランチャーで同じ判断にしないと、手が片方外れたときの挙動がばらつきます。
 
 const TARGET_TITLES: Array[String] = ["対象 A", "対象 B", "対象 C"]
 const TARGET_ORIGIN := Vector3(0.0, 1.3, -1.8)
@@ -50,7 +53,8 @@ func _process(_delta: float) -> void:
 	if _stage == null:
 		return
 
-	var from_controller := _update_source()
+	_pointer.global_transform = _stage.get_pointer_transform()
+	var from_controller := _stage.is_pointer_from_controller()
 	_ray.force_raycast_update()
 
 	# 近接が成立していれば、レイの結果より近くの対象を優先する。
@@ -61,18 +65,6 @@ func _process(_delta: float) -> void:
 	_update_visuals(from_controller)
 	_update_selection()
 	_update_status()
-
-
-## レイの出所を決める。コントローラーを使えた場合はtrue。
-func _update_source() -> bool:
-	for hand: int in [MRStage.Hand.RIGHT, MRStage.Hand.LEFT]:
-		var controller := _stage.get_aim_controller(hand)
-		if controller.get_is_active() and not _stage.is_hand_tracking_active(hand):
-			_pointer.global_transform = controller.global_transform
-			return true
-
-	_pointer.global_transform = _stage.camera.global_transform
-	return false
 
 
 func _find_ray_target() -> int:

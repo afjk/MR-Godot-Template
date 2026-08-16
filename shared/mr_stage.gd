@@ -22,6 +22,9 @@ const HAND_TRACKER_PATHS: Array[StringName] = [
 	&"/user/hand_tracker/left",
 	&"/user/hand_tracker/right",
 ]
+## 手が見えなくなってから、コントローラー操作へ戻すまでの猶予。
+## 片手が一瞬外れただけで出所が切り替わると、ポインタが飛んで操作できなくなる。
+const HAND_GRACE := 0.6
 ## pinchを始めた／離したとみなす指先の距離。離す側を広く取り、指の震えでばたつかせない。
 const PINCH_ENTER := 0.022
 const PINCH_EXIT := 0.032
@@ -45,6 +48,9 @@ var fallback_reason := ""
 var _xr_is_focussed := false
 var _pinching: Array[bool] = [false, false]
 var _pinch_started: Array[bool] = [false, false]
+var _hand_grace := 0.0
+var _pointer_transform := Transform3D.IDENTITY
+var _pointer_from_controller := false
 
 @onready var origin: XROrigin3D = $XROrigin3D
 @onready var camera: XRCamera3D = $XROrigin3D/XRCamera3D
@@ -89,10 +95,12 @@ func _ready() -> void:
 	_apply_best_refresh_rate()
 
 
-func _process(_delta: float) -> void:
-	# pinchは複数のサンプルが同時に見るので、1フレームに1回ここで更新する。
+func _process(delta: float) -> void:
+	# pinchとポインタの出所は複数のサンプルが同時に見るので、ここで1回だけ更新する。
 	for hand: int in [Hand.LEFT, Hand.RIGHT]:
 		_update_pinch(hand)
+
+	_update_pointer(delta)
 
 
 ## その端末で使えるenvironment blend modeの一覧。
@@ -138,6 +146,35 @@ func is_hand_tracking_active(hand: int) -> bool:
 		return false
 
 	return tracker.hand_tracking_source not in INACTIVE_HAND_SOURCES
+
+
+## レイを飛ばす元の姿勢。コントローラーのaim pose、または視線。
+func get_pointer_transform() -> Transform3D:
+	return _pointer_transform
+
+
+## ポインタがコントローラー由来か。視線のときはfalse（ビームを描かない目印にする）。
+func is_pointer_from_controller() -> bool:
+	return _pointer_from_controller
+
+
+func _update_pointer(delta: float) -> void:
+	# 片手だけ見えていれば手の操作として扱う。もう片方が外れた瞬間に
+	# コントローラー扱いへ落ちると、失われた手の古い姿勢からレイが出てしまう。
+	var hand_visible := is_hand_tracking_active(Hand.LEFT) or is_hand_tracking_active(Hand.RIGHT)
+	_hand_grace = HAND_GRACE if hand_visible else maxf(_hand_grace - delta, 0.0)
+
+	if _hand_grace <= 0.0:
+		for hand: int in [Hand.RIGHT, Hand.LEFT]:
+			var controller := get_aim_controller(hand)
+			if controller.get_is_active():
+				_pointer_transform = controller.global_transform
+				_pointer_from_controller = true
+				return
+
+	# 手で操作している間と、コントローラーが無い間は視線から飛ばす。
+	_pointer_transform = camera.global_transform
+	_pointer_from_controller = false
 
 
 ## 親指と人差し指がくっついているか。閾値にヒステリシスを入れてある。

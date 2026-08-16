@@ -58,25 +58,14 @@ func _process(_delta: float) -> void:
 	if _stage == null:
 		return
 
-	var from_controller := _update_source()
+	_pointer.global_transform = _stage.get_pointer_transform()
+	var from_controller := _stage.is_pointer_from_controller()
 	_ray.force_raycast_update()
 	_hitting = _ray.is_colliding()
 
 	_update_visuals(from_controller)
 	_forward_pointer_to_ui()
 	_status.text = "2D UIパネル\n%s" % ("板を指しています" if _hitting else "板の外です")
-
-
-## レイの出所を決める。コントローラーを使えた場合はtrue。
-func _update_source() -> bool:
-	for hand: int in [MRStage.Hand.RIGHT, MRStage.Hand.LEFT]:
-		var controller := _stage.get_aim_controller(hand)
-		if controller.get_is_active() and not _stage.is_hand_tracking_active(hand):
-			_pointer.global_transform = controller.global_transform
-			return true
-
-	_pointer.global_transform = _stage.camera.global_transform
-	return false
 
 
 func _update_visuals(from_controller: bool) -> void:

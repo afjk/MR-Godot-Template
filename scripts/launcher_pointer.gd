@@ -1,9 +1,10 @@
 class_name LauncherPointer
 extends Node3D
 
-## ランチャー専用のポインタ。コントローラーのaim poseからレイを飛ばし、
-## コントローラーが無ければ視線を使う。決定はコントローラーの`select`アクション、
+## ランチャー専用のポインタ。レイの出所（コントローラーのaim poseか視線か）は
+## `shared/mr_stage.gd`が決めます。決定はコントローラーの`select`アクション、
 ## Hand Trackingではpinch、デスクトップではマウス左ボタン。
+## 片手だけHand Trackingが外れても、レイと決定は残った手で続けられます。
 ##
 ## これはランチャーの部品であってサンプルではありません。汎用のポインタは
 ## `docs/mr_toolkit_design.md`の検討対象です。
@@ -29,7 +30,8 @@ func _process(_delta: float) -> void:
 	if _stage == null:
 		return
 
-	var from_controller := _update_source()
+	global_transform = _stage.get_pointer_transform()
+	var from_controller := _stage.is_pointer_from_controller()
 	_ray.force_raycast_update()
 
 	var hit := _ray.get_collider() as Node3D
@@ -48,19 +50,6 @@ func _process(_delta: float) -> void:
 ## 現在レイが指しているもの。指していなければnull。
 func get_target() -> Node3D:
 	return _target
-
-
-## レイの出所を決める。コントローラーを使えた場合はtrue。
-func _update_source() -> bool:
-	for hand: int in [MRStage.Hand.RIGHT, MRStage.Hand.LEFT]:
-		var controller := _stage.get_aim_controller(hand)
-		if controller.get_is_active() and not _stage.is_hand_tracking_active(hand):
-			global_transform = controller.global_transform
-			return true
-
-	# コントローラーが無い場合は視線から飛ばす。Hand Trackingではpinchで決定できる。
-	global_transform = _stage.camera.global_transform
-	return false
 
 
 func _update_visuals(from_controller: bool) -> void:
