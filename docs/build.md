@@ -241,6 +241,18 @@ GodotとAndroid SDKの導入、OpenXR Vendors plugin、Android Gradle Build Temp
 
 このプロジェクトは標準OpenXRのAlpha environment blendと`XR_EXT_hand_tracking`を使用します。`project.godot`に残っている`xr/openxr/extensions/meta/passthrough`という設定名は、OpenXR Vendors pluginがPICOでも利用する`XR_FB_passthrough` fallbackを有効にするために必要です。PICO runtimeがネイティブAlpha blendを提供する場合はruntime側が優先されます。
 
+#### 空間データの権限は自動で入る
+
+平面検出には`com.picovr.permission.SPATIAL_DATA`が要りますが、**Export presetに手で足す項目はありません。** OpenXR Vendors 5.1.0のPICO用export pluginが、`xr/openxr/extensions/spatial_entity/enabled`（このプロジェクトでは有効）を見てmanifestへ自動で追加します。実行時の要求も、pluginが起動時にまとめて行います（`xr/openxr/extensions/automatically_request_runtime_permissions`が既定の有効のまま）。
+
+インストール後に確認するなら次のとおりです。
+
+```bash
+adb shell dumpsys package com.example.pico4ultramrgodottemplate | grep -i spatial
+```
+
+権限が出てこない場合は、`OpenXR Vendors > PICO`が有効になっているかを先に確認してください。
+
 ### 3. PICO用APKをビルド
 
 GodotのExport画面で`PICO 4 Ultra`を選び、`Export Project`からDebug APKを出力します。コマンドラインでは次のようにビルドできます。

@@ -111,6 +111,21 @@ Godot OpenXR Vendorsの`doc_classes/`を全件確認しましたが（84ファ�
 
 Unity SDKはUnity専用のラッパーで、その下にあるのは結局同じruntime機能です。**Godotから同じものへ届く正規の入口が経路1・2なので、こちらを選ぶ理由はありません。**
 
+### ビルド側の準備は既に済んでいる
+
+平面検出には`com.picovr.permission.SPATIAL_DATA`が要ります。OpenXR Vendors 5.1.0のPICO用export pluginのソースを確認したところ、この権限は**`xr/openxr/extensions/spatial_entity/enabled`が有効なら自動でmanifestへ入り**、実行時の要求もplugin側が起動時に行います。
+
+```cpp
+// plugin/src/main/cpp/export/pico_export_plugin.cpp
+if ((bool)export_preset->get_project_setting("xr/openxr/extensions/spatial_entity/enabled")) {
+    contents += "    <uses-permission android:name=\"com.picovr.permission.SPATIAL_DATA\" />\n";
+}
+```
+
+このプロジェクトは既に`spatial_entity/enabled=true`なので、**現在のPICO presetをそのままビルドすれば試せます。** 設定変更もコード追加も要りません。
+
+なお、pluginがPICO向けにこの分岐をわざわざ持っていること自体が、**PICO runtimeでcoreのSpatial Entitiesが動く前提で作られている**傍証です。
+
 ### 結論
 
 1. まず`plane_detection`と`floor_detection`をPICO 4 Ultra実機で試す。**動けば実装は不要**

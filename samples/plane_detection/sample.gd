@@ -58,6 +58,9 @@ func _exit_tree() -> void:
 
 
 func _process(_delta: float) -> void:
+	if _stage == null:
+		return
+
 	_status.text = _build_status()
 
 
@@ -148,14 +151,27 @@ func _plane_kind(tracker: OpenXRPlaneTracker) -> String:
 	return label if not label.is_empty() else "不明"
 
 
+## 何も出ないときに原因が切り分けられる表示にする。端末ごとに詰まる場所が違うので、
+## 「対応していない」「対応しているがデータが無い」を必ず区別します。
 func _build_status() -> String:
-	if not _is_plane_tracking_supported():
-		return "平面検出\nこの端末は平面検出（XR_EXT_spatial_plane_tracking）を\n公開していません"
+	if not _stage.is_mr_active:
+		return "平面検出\nMRが開始していません\n%s" % _stage.fallback_reason
 
+	if not Engine.has_singleton(&"OpenXRSpatialPlaneTrackingCapability"):
+		return "平面検出\nSpatial Entitiesが使えません\nproject.godotのspatial_entity/enabledを確認してください"
+
+	if not Engine.get_singleton(&"OpenXRSpatialPlaneTrackingCapability").is_supported():
+		return "平面検出\nこのruntimeは平面検出（XR_EXT_spatial_plane_tracking）を\n公開していません"
+
+	# 対応はしている。ここから先で何も出ないなら、原因は権限か未スキャン。
+	var anchor_count := XRServer.get_trackers(XRServer.TRACKER_ANCHOR).size()
 	if _planes.is_empty():
-		return "平面検出\nまだ平面がありません\n端末側の部屋スキャンが済んでいるか確認してください"
+		var empty := "平面検出\n対応: あり／平面: 0（anchorトラッカー: %d）"
+		return empty % anchor_count + "\n部屋のスキャンと、空間データの権限を確認してください"
 
 	var counts: Dictionary = {}
+	# ラベルは端末が実際に返した文字列をそのまま数える。何を返すかは端末差が大きい。
+	var labels: Dictionary = {}
 	for tracker_name in _planes:
 		var tracker := XRServer.get_tracker(tracker_name) as OpenXRPlaneTracker
 		if tracker == null:
@@ -163,16 +179,18 @@ func _build_status() -> String:
 
 		var kind := _plane_kind(tracker)
 		counts[kind] = int(counts.get(kind, 0)) + 1
+		var raw := tracker.plane_label if not tracker.plane_label.is_empty() else "(ラベル無し)"
+		labels[raw] = int(labels.get(raw, 0)) + 1
 
 	var parts: Array[String] = []
 	for kind in counts:
 		parts.append("%s:%d" % [kind, counts[kind]])
 
-	return "平面検出\n検出数: %d\n%s" % [_planes.size(), " ".join(parts)]
+	var raw_parts: Array[String] = []
+	for raw in labels:
+		raw_parts.append("%s:%d" % [raw, labels[raw]])
 
-
-func _is_plane_tracking_supported() -> bool:
-	if not Engine.has_singleton(&"OpenXRSpatialPlaneTrackingCapability"):
-		return false
-
-	return Engine.get_singleton(&"OpenXRSpatialPlaneTrackingCapability").is_supported()
+	return (
+		"平面検出\n検出数: %d\n%s\nruntimeのラベル: %s"
+		% [_planes.size(), " ".join(parts), " ".join(raw_parts)]
+	)
