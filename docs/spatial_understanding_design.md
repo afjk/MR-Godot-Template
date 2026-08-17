@@ -133,6 +133,8 @@ var confidence: float
 
 受け入れ条件: 4機種すべてで床の高さが返り、その上に立方体を置いて沈まない・浮かないこと。Quest 3では実際の床の高さと5cm以内で一致すること。
 
+> **重要な追記**: Quest 3には**OSレベルのリアルタイム平面検出がありません**。AR Foundation（Unity + Meta OpenXR）も同じで、返ってくるのはSpace Setupの事前スキャン結果です。リアルタイムにやるならDepth APIから自分で作るしかありません。調査と実現方法は[リアルタイム平面認識・メッシュ生成の調査](realtime_spatial_investigation.md)にまとめました。
+
 ## 6. 環境メッシュ
 
 ### 取得の性質が端末で違う

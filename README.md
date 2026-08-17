@@ -96,7 +96,8 @@ addons/godotopenxrvendors/    Meta/PICO/VIVE向けOpenXR Vendors plugin
 
 - [docs/samples_plan.md](docs/samples_plan.md): サンプル集としての構成、サンプル一覧、進め方（一部は実装済み）
 - [docs/mr_toolkit_design.md](docs/mr_toolkit_design.md): MRTK3相当のインタラクション基盤の設計案（共通化はサンプルからの抽出で行う方針です）
-- [docs/spatial_understanding_design.md](docs/spatial_understanding_design.md): AR Foundation相当の空間認識（床面検知、環境メッシュ、セグメンテーション、アンカー）。未実装
+- [docs/spatial_understanding_design.md](docs/spatial_understanding_design.md): AR Foundation相当の空間認識（床面検知、環境メッシュ、セグメンテーション、アンカー）
+- [docs/realtime_spatial_investigation.md](docs/realtime_spatial_investigation.md): リアルタイムの平面認識とメッシュ生成をQuest 3で実現する方法の調査
 
 ## 既知の制約
 
