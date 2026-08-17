@@ -15,6 +15,9 @@ extends Node3D
 ## 注意: このAPIが返すのは、多くの端末では**事前にスキャンした部屋のデータ**です。
 ## Quest 3ではSpace Setupの結果になり、机を動かしても平面は動きません。
 ## その場で検出したい場合は`realtime_planes`サンプルを参照してください。
+##
+## PICOはKhronos標準のSpatial Entitiesを最初に実装したベンダーなので、
+## PICO 4 Ultraではこのサンプルがそのまま通る見込みがあります（実機未確認）。
 
 const LABEL_COLORS := {
 	"floor": Color(0.25, 0.85, 0.45, 0.30),

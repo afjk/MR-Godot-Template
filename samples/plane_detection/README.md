@@ -44,6 +44,8 @@ Godot 4.6 coreの**Spatial Entities**（`XR_EXT_spatial_plane_tracking`）を使
 
 `XR_EXT_spatial_plane_tracking`を公開するruntimeのみ。非対応の端末では、その旨を表示して何も置きません。
 
+**PICO 4 Ultraが本命です。** PICOはこのKhronos標準を最初に実装したベンダーで、Godot側の実装検証にも協力しています。さらにPICOのruntimeには平面検出そのもの（`XR_BD_spatial_plane`）とリアルタイムの意味ラベル付きメッシュ（`XR_BD_spatial_mesh`）があります。詳しくは[調査メモ](../../docs/realtime_spatial_investigation.md#3-pico-4-ultraは事情が違う)を参照してください。実機での確認はまだです。
+
 ## 単体で動かす
 
 `samples/plane_detection/sample.tscn`をエディタで開いてF6。

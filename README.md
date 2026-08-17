@@ -20,7 +20,7 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの、Mixed Re
 | [2D UIパネル](samples/ui_panel_2d/) | SubViewportの2D UIを3Dの板に貼り、ポインタで操作する | 全機種 |
 | [ハンドメニュー](samples/hand_menu/) | 手のひらを自分へ向けるとメニューが出る（Solver相当） | 全機種 |
 | [両手操作](samples/two_hand_manipulation/) | 両手で掴んで回転・拡縮する。倍率の制約つき | 全機種 |
-| [平面検出](samples/plane_detection/) | 検出された平面（床・壁・天井・机）を可視化する。ARPlaneManager相当 | runtime次第 |
+| [平面検出](samples/plane_detection/) | 検出された平面（床・壁・天井・机）を可視化する。ARPlaneManager相当 | runtime次第（PICO 4 Ultraが本命） |
 | [床面検知](samples/floor_detection/) | 検出された平面から床を選ぶ。取れなければLocal Floorの仮定 | 全機種（精度は端末差） |
 | [リアルタイム平面推定](samples/realtime_planes/) | 深度マップから、見ている先の面をその場で推定する。スキャン不要 | Quest 3 |
 | [深度オクルージョン](samples/occlusion_depth/) | 実物が仮想物体をリアルタイムに隠す。手や動く物にも効く | Quest 3 |
@@ -97,7 +97,7 @@ addons/godotopenxrvendors/    Meta/PICO/VIVE向けOpenXR Vendors plugin
 - [docs/samples_plan.md](docs/samples_plan.md): サンプル集としての構成、サンプル一覧、進め方（一部は実装済み）
 - [docs/mr_toolkit_design.md](docs/mr_toolkit_design.md): MRTK3相当のインタラクション基盤の設計案（共通化はサンプルからの抽出で行う方針です）
 - [docs/spatial_understanding_design.md](docs/spatial_understanding_design.md): AR Foundation相当の空間認識（床面検知、環境メッシュ、セグメンテーション、アンカー）
-- [docs/realtime_spatial_investigation.md](docs/realtime_spatial_investigation.md): リアルタイムの平面認識とメッシュ生成をQuest 3で実現する方法の調査
+- [docs/realtime_spatial_investigation.md](docs/realtime_spatial_investigation.md): リアルタイムの平面認識とメッシュ生成の調査（Quest 3での自作方法と、PICO 4 Ultraが持つ`XR_BD_*`拡張）
 
 ## 既知の制約
 

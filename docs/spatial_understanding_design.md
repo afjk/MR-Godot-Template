@@ -42,15 +42,17 @@ OpenXR Vendors pluginが公開しているクラス（`doc_classes/`）から読
 
 | 機能 | Quest 3 | PICO 4 Ultra | VIVE Focus Vision | Android XR |
 | --- | --- | --- | --- | --- |
-| 平面 | ○ Meta Scene | △ core EXT次第（要実機確認） | ✕ | ○ Trackables |
-| 環境メッシュ | ○ Scene mesh（事前スキャン） | ✕（要確認） | ✕ | ○ Scene Meshing（逐次更新） |
+| 平面 | ○ Meta Scene（事前スキャン） | ○ runtimeにある（Godotから届くかは要実機確認） | ✕ | ○ Trackables（リアルタイム） |
+| 環境メッシュ | ○ Scene mesh（事前スキャン） | ○ リアルタイム＋意味ラベル（Godot側は未対応） | ✕ | ○ Scene Meshing（逐次更新） |
 | 深度（オクルージョン） | ○ `OpenXRMetaEnvironmentDepth` | ✕ | ✕ | ○ `OpenXRAndroidEnvironmentDepth` |
-| アンカー／永続化 | ○ | △ core EXT次第 | ✕ | ○ |
+| アンカー／永続化 | ○ | ○ runtimeにある（Godot側は未対応） | ✕ | ○ |
 | マーカー（QR） | △ core EXT次第 | △ | ✕ | ○ |
 | ライト推定 | ✕ | ✕ | ✕ | ○ |
 | カメラ画像 | △ Passthrough Camera API（権限必須） | ✕ | ✕ | △ |
 
-VIVE Focus Visionは、Vendors pluginが`OpenXRHtcPassthroughExtension`と顔追跡しか公開しておらず、**空間認識は現状ゼロ**です。PICO 4 Ultraも専用クラスが無いため、Godot 4.6 coreのSpatial Entities（`XR_EXT_spatial_*`）をruntimeが公開していれば動く、という位置づけになります。Khronosの発表ではMeta・Google・PICO・Varjoが対応を表明しているので、**時間が解決する可能性はありますが、今は前提にできません**。
+VIVE Focus Visionは、Vendors pluginが`OpenXRHtcPassthroughExtension`と顔追跡しか公開しておらず、**空間認識は現状ゼロ**です。
+
+**PICO 4 Ultraは調査の結果、当初の想定より大幅に良いことが分かりました。** ByteDanceのベンダー拡張（`XR_BD_spatial_sensing` / `_plane` / `_mesh` / `_anchor`）がOpenXRレジストリに登録済みで、平面検出もリアルタイムの意味ラベル付きメッシュもruntimeが持っています。さらにPICOは**Khronos標準のSpatial Entities（`XR_EXT_spatial_*`）を最初に実装したベンダー**で、Godotの実装検証にも協力しています。Godot 4.6 coreのSpatial Entitiesがそのまま通る可能性が高く、[`plane_detection`](../samples/plane_detection/)サンプルを実機で試すのが次の一手です。詳細は[リアルタイム調査メモの第3節](realtime_spatial_investigation.md#3-pico-4-ultraは事情が違う)にあります。
 
 この非対称性が設計をほぼ決めます。**「取れない端末で何を見せるか」がAPIの主要な設計対象**です。
 
@@ -231,7 +233,7 @@ AR Foundationのhuman segmentation stencilはiOS固有機能で、**standalone M
 | 項目 | 内容 | 対応 |
 | --- | --- | --- |
 | Compatibility rendererでの深度経路 | 深度テクスチャをシェーダーへ渡せるかが未確認 | S3のオクルーダー材質検証を先に単独で行い、駄目ならメッシュ遮蔽止まり |
-| 端末の非対称性 | VIVEは空間認識ゼロ、PICOは未知数 | capability API前提。「無い」を正常系として設計 |
+| 端末の非対称性 | VIVEは空間認識ゼロ。PICOはruntimeに機能があるがGodotから届くか未確認 | capability API前提。「無い」を正常系として設計 |
 | 権限 | Meta: Scene API（`com.oculus.permission.USE_SCENE`）、Android XR: `android.permission.SCENE_UNDERSTANDING_COARSE`（dangerous）、カメラ: `horizonos.permission.HEADSET_CAMERA` | export presetと実行時要求の両方を手順化してREADMEへ |
 | 部屋未スキャン | Quest 3でSpace Setup未実施なら結果は空 | `NEEDS_SETUP`を返し、Scene Captureへ誘導 |
 | メッシュのコスト | collision生成とメモリ | 平面のみ既定、チャンク単位、フレーム分散 |
