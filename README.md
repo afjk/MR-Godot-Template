@@ -29,8 +29,9 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの、Mixed Re
 | [リアルタイム複数平面検出](samples/realtime_plane_clusters/) | 深度から複数の平面を同時に見つけ、フレーム間で追跡する | Quest 3 |
 | [深度オクルージョン](samples/occlusion_depth/) | 実物が仮想物体をリアルタイムに隠す。手や動く物にも効く | Quest 3 |
 | [空間アンカー](samples/spatial_anchor/) | 実空間に印を打ち、アプリを再起動しても同じ場所に残す | runtime次第 |
+| [マーカー追跡](samples/marker_tracking/) | QRコードやArUcoマーカーを見つけ、その場所を既知の座標として使う | runtime次第 |
 
-マーカー追跡と表現・性能まわりは、[検討メモ](#今後の検討)の順で追加していきます。
+表現・性能まわりは、[検討メモ](#今後の検討)の順で追加していきます。
 
 ## 共通の土台
 
@@ -108,7 +109,7 @@ addons/godotopenxrvendors/    Meta/PICO/VIVE向けOpenXR Vendors plugin
 ## 既知の制約
 
 - パススルー映像はMeta、PICO、またはVIVEのOpenXR runtimeが合成します。アプリからカメラ画像のピクセルやテクスチャ自体へはアクセスできません。
-- 空間認識は平面検出・床面検知・部屋メッシュ・深度によるリアルタイム推定・オクルージョン・空間アンカーまでです。マーカー追跡は実装していません。
+- 空間認識は平面検出・床面検知・部屋メッシュ・深度によるリアルタイム推定・オクルージョン・空間アンカー・マーカー追跡までです。カメラ画像を使うセグメンテーションは実装していません。
 - 部屋メッシュで仮想物体を隠す（メッシュによるオクルージョン）ことは、Godot 4.6のCompatibility rendererでは素直に書けません。色を書かず深度だけ書くマテリアルが作れないためです。実物での遮蔽は深度オクルージョンを使ってください。
 - Hand Trackingは関節データの取得とデバッグ表示のみです。スキニング済みハンドモデルやジェスチャー操作は含みません。
 - MRにはOpenXR Vendors pluginと、対象端末専用のExport presetが必要です。Meta、PICO、Khronos loaderを同じpresetで同時に有効化しないでください。

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=22 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
@@ -155,6 +155,14 @@ scene = "res://samples/occlusion_depth/sample.tscn"
 devices = 1
 notes = "Quest 3の環境深度"
 
+[sub_resource type="Resource" id="Sample_marker_tracking"]
+script = ExtResource("2_info")
+title = "マーカー追跡"
+description = "QRコードやArUcoマーカーを見つけ、その場所を既知の座標として使う。"
+scene = "res://samples/marker_tracking/sample.tscn"
+devices = 15
+notes = "runtimeがマーカー追跡を公開する場合のみ"
+
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_scene_mesh"), SubResource("Sample_realtime_planes"), SubResource("Sample_realtime_mesh"), SubResource("Sample_realtime_mesh_collision"), SubResource("Sample_realtime_plane_clusters"), SubResource("Sample_occlusion_depth"), SubResource("Sample_spatial_anchor")])
+samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_scene_mesh"), SubResource("Sample_realtime_planes"), SubResource("Sample_realtime_mesh"), SubResource("Sample_realtime_mesh_collision"), SubResource("Sample_realtime_plane_clusters"), SubResource("Sample_occlusion_depth"), SubResource("Sample_spatial_anchor"), SubResource("Sample_marker_tracking")])

@@ -105,6 +105,7 @@ openxr/extensions/spatial_entity/enable_builtin_plane_detection=true
 openxr/extensions/spatial_entity/enable_spatial_anchors=true
 openxr/extensions/spatial_entity/enable_persistent_anchors=true
 openxr/extensions/spatial_entity/enable_builtin_anchor_detection=true
+openxr/extensions/spatial_entity/marker_tracking/enable=true
 openxr/extensions/meta/anchor_api=true
 openxr/extensions/meta/scene_api=true
 openxr/extensions/meta/environment_depth=true
