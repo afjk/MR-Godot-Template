@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=26 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
@@ -187,6 +187,30 @@ scene = "res://samples/androidxr_scene_mesh/sample.tscn"
 devices = 8
 notes = "Android XR。実機未検証"
 
+[sub_resource type="Resource" id="Sample_composition_layer"]
+script = ExtResource("2_info")
+title = "Composition layer"
+description = "文字をruntimeに直接合成させて、通常の3D描画より鮮明に出す。"
+scene = "res://samples/composition_layer/sample.tscn"
+devices = 15
+notes = "非対応runtimeでは通常描画に落ちます"
+
+[sub_resource type="Resource" id="Sample_passthrough_style"]
+script = ExtResource("2_info")
+title = "パススルーの色調整"
+description = "実世界の見え方そのものをruntime側で加工する。描画負荷はゼロ。"
+scene = "res://samples/passthrough_style/sample.tscn"
+devices = 1
+notes = "Quest 3のXR_FB_passthrough"
+
+[sub_resource type="Resource" id="Sample_performance"]
+script = ExtResource("2_info")
+title = "性能の見方"
+description = "foveationとMSAAを切り替えて、効き方を実機で確かめる。"
+scene = "res://samples/performance/sample.tscn"
+devices = 15
+notes = ""
+
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_minimal"), SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_scene_mesh"), SubResource("Sample_realtime_planes"), SubResource("Sample_realtime_mesh"), SubResource("Sample_realtime_mesh_collision"), SubResource("Sample_realtime_plane_clusters"), SubResource("Sample_occlusion_depth"), SubResource("Sample_spatial_anchor"), SubResource("Sample_marker_tracking"), SubResource("Sample_androidxr_planes"), SubResource("Sample_androidxr_scene_mesh")])
+samples = Array[Resource]([SubResource("Sample_minimal"), SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_scene_mesh"), SubResource("Sample_realtime_planes"), SubResource("Sample_realtime_mesh"), SubResource("Sample_realtime_mesh_collision"), SubResource("Sample_realtime_plane_clusters"), SubResource("Sample_occlusion_depth"), SubResource("Sample_spatial_anchor"), SubResource("Sample_marker_tracking"), SubResource("Sample_androidxr_planes"), SubResource("Sample_androidxr_scene_mesh"), SubResource("Sample_composition_layer"), SubResource("Sample_passthrough_style"), SubResource("Sample_performance")])
