@@ -30,6 +30,8 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの、Mixed Re
 | [深度オクルージョン](samples/occlusion_depth/) | 実物が仮想物体をリアルタイムに隠す。手や動く物にも効く | Quest 3 |
 | [空間アンカー](samples/spatial_anchor/) | 実空間に印を打ち、アプリを再起動しても同じ場所に残す | runtime次第 |
 | [マーカー追跡](samples/marker_tracking/) | QRコードやArUcoマーカーを見つけ、その場所を既知の座標として使う | runtime次第 |
+| [Android XRの平面検出](samples/androidxr_planes/) | OSが逐次見つけた平面をそのまま受け取る。事前スキャン不要 | Android XR（未検証） |
+| [Android XRの環境メッシュ](samples/androidxr_scene_mesh/) | OSが逐次更新する部屋のメッシュを、意味ラベル付きで差分更新する | Android XR（未検証） |
 
 表現・性能まわりは、[検討メモ](#今後の検討)の順で追加していきます。
 

@@ -240,10 +240,16 @@ GDScriptで80×60 = 4,800点なら、1 Hzで回す限り現実的です。実測
 >
 > 深度→点群の変換が3サンプル目になったので、規約どおり`shared/depth_grid.gd`（`DepthGrid`）へ抽出し、`realtime_planes`と`realtime_mesh_collision`もそちらへ寄せました。抽出にあわせて、返す座標を**ワールドではなくXRの基準空間**に統一しています。逆行列が返すのがその空間なので、変換を挟まないほうが取り違えが起きません。
 
-### 別枠: `androidxr_trackables`
+### 別枠: Android XRのネイティブ経路 ※実装済み（未検証）
 
-- Android XRのネイティブ経路（`OpenXRAndroidTrackablePlaneTracker` / `OpenXRAndroidSceneMeshing`）
-- 実機が無いため未検証のまま入れることになります。コードは書けます
+- `androidxr_planes`（`OpenXRAndroidTrackablePlaneTracker`）と`androidxr_scene_mesh`（`OpenXRAndroidSceneMeshing`）
+- 実機が無いため未検証のまま入れました。スクリプト冒頭とREADMEに明記してあります
+
+> 実装時のメモ: Android XRの平面には**吸収（subsume）**という概念があります。小さい平面が、あとで見つかった大きい平面の一部だと分かることがあり、`get_subsumed_by_plane()`が非nullなら表示してはいけません。追加時だけでなく更新時にも見る必要があります。
+>
+> 環境メッシュは小片ごとに`CREATED` / `UPDATED` / `UNCHANGED` / `DELETED`が付きます。**`UNCHANGED`で`ArrayMesh`を作り直さない**のが要点で、ここを素通しするかどうかで負荷が変わります。姿勢だけは毎回入れ直します。
+>
+> プラグインのクラス（`OpenXRAndroid*`）は、このリポジトリに同梱していないpluginが提供します。スクリプトに型として書くとplugin無しの環境で読み込みに失敗するため、`is_class()`と`call()`で動的に触っています。`scene_mesh`と同じ扱いです。
 
 ### 別枠: PICO 4 Ultra
 

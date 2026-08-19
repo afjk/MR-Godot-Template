@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=23 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=25 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
@@ -163,6 +163,22 @@ scene = "res://samples/marker_tracking/sample.tscn"
 devices = 15
 notes = "runtimeがマーカー追跡を公開する場合のみ"
 
+[sub_resource type="Resource" id="Sample_androidxr_planes"]
+script = ExtResource("2_info")
+title = "Android XRの平面検出"
+description = "OSが逐次見つけた平面をそのまま受け取る。事前スキャン不要で追従する。"
+scene = "res://samples/androidxr_planes/sample.tscn"
+devices = 8
+notes = "Android XR。実機未検証"
+
+[sub_resource type="Resource" id="Sample_androidxr_scene_mesh"]
+script = ExtResource("2_info")
+title = "Android XRの環境メッシュ"
+description = "OSが逐次更新する部屋のメッシュを、意味ラベル付きで差分更新する。"
+scene = "res://samples/androidxr_scene_mesh/sample.tscn"
+devices = 8
+notes = "Android XR。実機未検証"
+
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_scene_mesh"), SubResource("Sample_realtime_planes"), SubResource("Sample_realtime_mesh"), SubResource("Sample_realtime_mesh_collision"), SubResource("Sample_realtime_plane_clusters"), SubResource("Sample_occlusion_depth"), SubResource("Sample_spatial_anchor"), SubResource("Sample_marker_tracking")])
+samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_scene_mesh"), SubResource("Sample_realtime_planes"), SubResource("Sample_realtime_mesh"), SubResource("Sample_realtime_mesh_collision"), SubResource("Sample_realtime_plane_clusters"), SubResource("Sample_occlusion_depth"), SubResource("Sample_spatial_anchor"), SubResource("Sample_marker_tracking"), SubResource("Sample_androidxr_planes"), SubResource("Sample_androidxr_scene_mesh")])
