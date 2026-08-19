@@ -10,6 +10,7 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの、Mixed Re
 
 | サンプル | 内容 | 対応端末 |
 | --- | --- | --- |
+| [最小構成](samples/minimal/) | MRの土台に立方体を1つ置くだけ。新しいプロジェクトの出発点 | 全機種 |
 | [パススルー](samples/passthrough/) | Alpha environment blendでMRを開始し、blend modeを切り替えて違いを見る | 全機種 |
 | [Hand Tracking](samples/hand_tracking/) | `XRHandTracker`の26関節を表示し、光学式とコントローラー由来を見分ける | 全機種 |
 | [コントローラーモデル](samples/controller_models/) | runtimeが提供するコントローラーの3Dモデル表示と、非対応時の球マーカー | 全機種 |
@@ -100,6 +101,16 @@ addons/godotopenxrvendors/    Meta/PICO/VIVE向けOpenXR Vendors plugin
 共通コードを増やすのは、**同じものを3つのサンプルで書いてから**です。方針の詳細は[docs/samples_plan.md](docs/samples_plan.md)にあります。
 
 `samples/<name>/sample.tscn`をエディタで開いてF6を押すと、そのサンプルだけを実行できます。XRリグは`SampleBootstrap`が実行時に挿します。
+
+## 新しいプロジェクトを始める
+
+1. `shared/`をまるごとコピーする
+2. `samples/minimal/`（または気に入ったサンプルのフォルダ）をコピーする
+3. `project.godot`の`[autoload]`に`SampleBootstrap="*res://shared/sample_bootstrap.gd"`を足す
+4. `project.godot`の`[xr]`セクションと`openxr_action_map.tres`をコピーする
+5. `export_presets.cfg`から端末のpresetをコピーする
+
+サンプルは`shared/`以外に依存しない決まりなので、この手順で動きます。詳しくは[最小構成](samples/minimal/)を参照してください。
 
 ## 今後の検討
 
