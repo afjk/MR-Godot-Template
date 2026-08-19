@@ -24,6 +24,7 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの、Mixed Re
 | [床面検知](samples/floor_detection/) | 検出された平面から床を選ぶ。取れなければLocal Floorの仮定 | 全機種（精度は端末差） |
 | [リアルタイム平面推定](samples/realtime_planes/) | 深度マップから、見ている先の面をその場で推定する。スキャン不要 | Quest 3 |
 | [リアルタイム環境メッシュ](samples/realtime_mesh/) | 深度マップから毎フレーム更新される環境メッシュを作る。CPU処理なし | Quest 3 |
+| [環境メッシュの当たり判定](samples/realtime_mesh_collision/) | 深度からcollisionを作り、実際の床や机でボールを跳ねさせる | Quest 3 |
 | [深度オクルージョン](samples/occlusion_depth/) | 実物が仮想物体をリアルタイムに隠す。手や動く物にも効く | Quest 3 |
 
 環境メッシュとアンカーの永続化は、[検討メモ](#今後の検討)の順で追加していきます。

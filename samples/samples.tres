@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=18 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
@@ -115,6 +115,14 @@ scene = "res://samples/realtime_mesh/sample.tscn"
 devices = 1
 notes = "Quest 3の環境深度"
 
+[sub_resource type="Resource" id="Sample_realtime_mesh_collision"]
+script = ExtResource("2_info")
+title = "環境メッシュの当たり判定"
+description = "深度からConcavePolygonShape3Dを作り、実際の床や机でボールを跳ねさせる。"
+scene = "res://samples/realtime_mesh_collision/sample.tscn"
+devices = 1
+notes = "Quest 3の環境深度"
+
 [sub_resource type="Resource" id="Sample_occlusion_depth"]
 script = ExtResource("2_info")
 title = "深度オクルージョン"
@@ -125,4 +133,4 @@ notes = "Quest 3の環境深度"
 
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_realtime_planes"), SubResource("Sample_realtime_mesh"), SubResource("Sample_occlusion_depth")])
+samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_realtime_planes"), SubResource("Sample_realtime_mesh"), SubResource("Sample_realtime_mesh_collision"), SubResource("Sample_occlusion_depth")])
