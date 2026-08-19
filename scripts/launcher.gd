@@ -10,8 +10,9 @@ const LIBRARY_PATH := "res://samples/samples.tres"
 const ITEM_WIDTH := 0.62
 const ITEM_PITCH := 0.088
 const ITEM_FONT_SIZE := 44
-## 一覧全体をこの高さに収める。サンプルが増えたら間隔と文字を詰める。
-const MENU_MAX_HEIGHT := 0.72
+## 1ページに並べる項目数。**文字を詰めるのではなくページを分ける。**
+## 全部を1画面に収めようとすると、20本を超えたあたりで文字が読めなくなる。
+const ITEMS_PER_PAGE := 8
 ## 一番上の項目からタイトルまでの間隔。項目数で高さが変わるので実行時に置く。
 const TITLE_GAP := 0.07
 ## ランチャーの当たり判定だけに使う物理レイヤー。サンプル側と衝突させない。
@@ -19,6 +20,7 @@ const UI_LAYER := 8
 
 var _entries: Array[SampleInfo] = []
 var _items: Array[Node3D] = []
+var _page := 0
 var _highlighted: Node3D
 var _current_sample: Node
 var _stage: MRStage
@@ -58,38 +60,78 @@ func _unhandled_input(event: InputEvent) -> void:
 		_move_focus(1)
 	elif event.is_action_pressed(&"ui_up"):
 		_move_focus(-1)
+	elif event.is_action_pressed(&"ui_right"):
+		_turn_page(1)
+	elif event.is_action_pressed(&"ui_left"):
+		_turn_page(-1)
 	elif event.is_action_pressed(&"ui_accept") and _highlighted != null:
 		_on_selected(_highlighted)
 
 
 func _build_menu() -> void:
-	# 項目数が増えても視界に収まるよう、間隔と文字を必要なだけ詰める。
-	var pitch := minf(ITEM_PITCH, MENU_MAX_HEIGHT / maxf(_entries.size(), 1.0))
-	var row_scale := pitch / ITEM_PITCH
-	var top := (_entries.size() - 1) * pitch * 0.5
+	for item in _items:
+		item.queue_free()
+
+	_items.clear()
+	_set_highlight(null)
+
+	var pages := _page_count()
+	_page = clampi(_page, 0, pages - 1)
+	var first := _page * ITEMS_PER_PAGE
+	var last := mini(first + ITEMS_PER_PAGE, _entries.size())
+	var rows := last - first + (1 if pages > 1 else 0)
+	var top := (rows - 1) * ITEM_PITCH * 0.5
 
 	# タイトルは一番上の項目より上へ逃がす。項目数で高さが変わるため実行時に置く。
 	_status.position.y = top + TITLE_GAP
 	_title.position.y = _status.position.y + 0.06
 
-	for index in _entries.size():
+	for index in range(first, last):
 		var info := _entries[index]
-		var item := _create_item(info.title, info.get_devices_text(), row_scale)
-		item.position = Vector3(0, top - index * pitch, 0)
+		var item := _create_item(info.title, info.get_devices_text())
+		item.position = Vector3(0, top - (index - first) * ITEM_PITCH, 0)
 		item.get_node(^"Area").set_meta(&"sample_index", index)
 		_menu.add_child(item)
 		_items.append(item)
 
+	if pages > 1:
+		_build_page_nav(top - (last - first) * ITEM_PITCH, pages)
+
+
+## ページ送り。項目と同じ形にして、同じ操作で押せるようにする。
+## 最後のページの次は先頭へ戻る。デスクトップでは左右キーでも動かせる。
+func _build_page_nav(y: float, pages: int) -> void:
+	var item := _create_item("▶ 次のページ", "%d / %d" % [_page + 1, pages])
+	item.position = Vector3(0, y, 0)
+	item.get_node(^"Area").set_meta(&"page_delta", 1)
+	_menu.add_child(item)
+	_items.append(item)
+
+
+func _page_count() -> int:
+	return maxi(1, ceili(float(_entries.size()) / ITEMS_PER_PAGE))
+
+
+func _turn_page(delta: int) -> void:
+	var pages := _page_count()
+	if pages <= 1:
+		return
+
+	_page = wrapi(_page + delta, 0, pages)
+	_build_menu()
+	# 作り直した項目は既定で拾える状態にする。一覧を表示中のときだけ。
+	_set_pickable(_menu, _menu.visible)
+
 
 func _build_back_item() -> void:
-	var item := _create_item("サンプル一覧へ戻る", "", 1.0)
+	var item := _create_item("サンプル一覧へ戻る", "")
 	item.get_node(^"Area").set_meta(&"back", true)
 	_back.add_child(item)
 
 
-func _create_item(text: String, note: String, row_scale: float) -> Node3D:
+func _create_item(text: String, note: String) -> Node3D:
 	var item := Node3D.new()
-	var height := ITEM_PITCH * 0.85 * row_scale
+	var height := ITEM_PITCH * 0.85
 
 	var panel := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
@@ -99,13 +141,13 @@ func _create_item(text: String, note: String, row_scale: float) -> Node3D:
 	panel.name = "Panel"
 	item.add_child(panel)
 
-	var label := _create_label(text, int(ITEM_FONT_SIZE * row_scale), Color.WHITE)
+	var label := _create_label(text, ITEM_FONT_SIZE, Color.WHITE)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	label.position = Vector3(-ITEM_WIDTH * 0.5 + 0.025, 0, 0.012)
 	item.add_child(label)
 
 	if not note.is_empty():
-		var note_label := _create_label(note, int(30 * row_scale), Color(0.86, 0.92, 1.0))
+		var note_label := _create_label(note, 30, Color(0.86, 0.92, 1.0))
 		note_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		note_label.position = Vector3(ITEM_WIDTH * 0.5 - 0.025, 0, 0.012)
 		item.add_child(note_label)
@@ -190,6 +232,8 @@ func _on_selected(target: Node3D) -> void:
 
 	if area.has_meta(&"back"):
 		_close_sample()
+	elif area.has_meta(&"page_delta"):
+		_turn_page(int(area.get_meta(&"page_delta")))
 	elif area.has_meta(&"sample_index"):
 		_open_sample(int(area.get_meta(&"sample_index")))
 

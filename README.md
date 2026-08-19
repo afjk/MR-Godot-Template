@@ -67,7 +67,7 @@ cd MR-Godot-Template
 
 各手順の詳細は[docs/build.md](docs/build.md)にあります。つまずいたら[docs/troubleshooting.md](docs/troubleshooting.md)を参照してください。
 
-PCにOpenXR runtimeやHMDが無い場合、またはAlpha blendが使えない場合は、XR出力を有効にせず通常の3Dカメラで表示します。ランチャーは上下キーとEnterでも操作できます。
+PCにOpenXR runtimeやHMDが無い場合、またはAlpha blendが使えない場合は、XR出力を有効にせず通常の3Dカメラで表示します。ランチャーは上下キーとEnter、ページ送りは左右キーでも操作できます。
 
 ## リポジトリ構成
 
