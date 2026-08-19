@@ -250,7 +250,27 @@ GDScriptで80×60 = 4,800点なら、1 Hzで回す限り現実的です。実測
 - まず既存サンプルを実機で試す（コード不要）
 - 必要なら`XR_BD_spatial_plane` / `XR_BD_spatial_mesh`のGDExtension。第3節参照
 
-## 7. 決めたいこと
+## 7. メッシュによるオクルージョンは書けない
+
+当初は`occlusion_mesh`（部屋メッシュで仮想物体を隠す）を作る予定でしたが、**Godot 4.6のCompatibility rendererでは素直に書けない**ことが分かりました。理由を残しておきます。
+
+Alpha blendのパススルーでは、**アルファ0が「実世界を見せる」**という意味になります。したがってオクルーダーは「深度だけ書いて、色は書かない」必要があります。ところがGodotのspatial shaderでは、
+
+- `ALPHA`に書くか`transparency`を有効にすると、**そのマテリアルは透明パスへ回されます**。透明パスは不透明パスの後なので、既に描かれた不透明な仮想物体は隠せません
+- 不透明パスに残すと、色を書かないという指定ができません。`ALBEDO`も`ALPHA`も書かなければ既定の白が出ます
+- `render_mode depth_draw_always`は深度を書く指定であって、色を書かない指定ではありません
+
+Godot 4.5以降のstencilも解になりません。公式ドキュメントに次の制限があります。
+
+> You can only read from the stencil buffer in the transparent pass. Any attempt to read in the opaque pass will fail, as it's currently not supported behavior.
+
+つまりマスクされる側（仮想物体）も透明パスに置く必要があり、結局同じ制約に戻ります。しかもstencilは実験的機能です。
+
+**結論: 実物で仮想物体を隠したいなら[`occlusion_depth`](../samples/occlusion_depth/)の方式を使います。** 仮想物体側のフラグメントシェーダーで深度マップと比較するので、パスの順序に依存しません。実機で動作も確認済みです。部屋メッシュ（[`scene_mesh`](../samples/scene_mesh/)）の値打ちは、オクルージョンではなく**当たり判定と配置**にあります。
+
+色書き込みを止められるマテリアル指定（color write mask）がGodotに入れば、この判断は変わります。
+
+## 8. 決めたいこと
 
 1. **PICO 4 Ultra実機での確認**。`plane_detection`が動くかどうかで、以降の作業量が大きく変わります。**最優先**
 2. **S1から着手**でよいか（推奨）。S1は確実に動き、S2・S3の土台にもなります
