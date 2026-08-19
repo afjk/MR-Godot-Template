@@ -1,6 +1,6 @@
 # サンプル集としての構成 検討メモ
 
-このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1（骨格と基礎4サンプル）とP2（インタラクション6サンプル）は実装済みで、P3（空間認識）は平面検出・床面検知・深度系（リアルタイム推定とオクルージョン）まで進んでいます。
+このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1からP4まで、計画したサンプルはひととおり実装済みです（`occlusion_mesh`のみ、Godotの制約により見送り）。
 
 関連: [インタラクション基盤の検討](mr_toolkit_design.md) / [空間認識の検討](spatial_understanding_design.md)
 
@@ -43,8 +43,20 @@ samples/
   two_hand_manipulation/
   plane_detection/
   floor_detection/
+  scene_mesh/
   realtime_planes/
+  realtime_mesh/
+  realtime_mesh_collision/
+  realtime_plane_clusters/
   occlusion_depth/
+  spatial_anchor/
+  marker_tracking/
+  androidxr_planes/
+  androidxr_scene_mesh/
+  composition_layer/
+  passthrough_style/
+  performance/
+  minimal/
   samples.tres            一覧の定義（タイトル・説明・対応端末・シーンパス）
 docs/                     ビルド手順、トラブルシューティング、検討メモ
 export_presets.cfg        4機種分。APKは全サンプル入りの1本
@@ -106,12 +118,17 @@ export_presets.cfg        4機種分。APKは全サンプル入りの1本
 | --- | --- | --- |
 | `plane_detection` | 検出された平面と意味ラベルの可視化（ARPlaneManager相当） | runtime次第 |
 | `floor_detection` | 検出結果から床を選ぶ。取れなければLocal Floorの仮定 | 全機種（精度は端末差） |
-| `scene_mesh` | 部屋メッシュの取得、collision、可視化 | Quest 3 / Android XR |
-| `occlusion_mesh` | メッシュで実物が仮想物体を隠す（深度書き込み＋透明） | Quest 3 / Android XR |
+| `scene_mesh` | 部屋メッシュの取得、collision、可視化 | Quest 3 |
+| ~~`occlusion_mesh`~~ | メッシュで実物が仮想物体を隠す → **見送り**（下の注記） | — |
 | `realtime_planes` | 深度マップから見ている先の面をその場で推定 | Quest 3 |
-| `occlusion_depth` | 環境深度による動的オクルージョン（手・人にも効く） | Quest 3 / Android XR |
-| `spatial_anchor` | アンカーの生成・永続化・再読込 | Quest 3 / Android XR |
+| `realtime_mesh` | 深度から毎フレーム更新される環境メッシュ（頂点シェーダー） | Quest 3 |
+| `realtime_mesh_collision` | 同上のCPU版。`ConcavePolygonShape3D`で当たり判定 | Quest 3 |
+| `realtime_plane_clusters` | 深度から複数平面を検出し、フレーム間で追跡 | Quest 3 |
+| `occlusion_depth` | 環境深度による動的オクルージョン（手・人にも効く） | Quest 3 |
+| `spatial_anchor` | アンカーの生成・永続化・再読込 | runtime次第 |
 | `marker_tracking` | QRマーカーを基準に配置 | 端末次第 |
+| `androidxr_planes` | OSによるリアルタイム平面検出 | Android XR |
+| `androidxr_scene_mesh` | OSによる逐次更新の環境メッシュ | Android XR |
 
 ### 表現・性能
 
@@ -121,7 +138,9 @@ export_presets.cfg        4機種分。APKは全サンプル入りの1本
 | `passthrough_style` | パススルーの色調整（Meta Color LUT等） | Quest 3 |
 | `performance` | foveation、MSAA、負荷計測の見え方 | 全機種 |
 
-オクルージョンを**2本に分けている**のが要点です。メッシュによる静的な遮蔽（`occlusion_mesh`）と、深度による動的な遮蔽（`occlusion_depth`）は、必要な端末機能も実装も別物で、前者だけでも「机の裏に物が隠れる」体験は作れます。詳細は[空間認識の検討メモ](spatial_understanding_design.md)の第6・7節にあります。
+当初はオクルージョンを**2本に分ける**計画でした。メッシュによる静的な遮蔽（`occlusion_mesh`）と、深度による動的な遮蔽（`occlusion_depth`）です。しかし前者は**Godot 4.6のCompatibility rendererでは書けない**ことが分かり、見送りました（色を書かず深度だけ書くマテリアルが作れないため。[調査メモ](realtime_spatial_investigation.md)第7節）。実物での遮蔽は`occlusion_depth`の方式が正解です。
+
+もう1つ、リアルタイム系が計画より3本増えています。Quest 3のOSがリアルタイム平面検出を提供しないと分かったため、深度から自作する経路を用意したものです。
 
 ## 5. ランチャー
 
@@ -179,9 +198,9 @@ READMEの冒頭で「どのサンプルが何を示すか」が一覧できる�
 >
 > 一方、**`shared/interaction/`はまだ作っていません。** interactor/interactableの抽象が要るのは「複数のinteractableを登録して調停する」段階からで、5サンプルはいずれも対象が数個で、それぞれの当たり判定が主題そのものでした。近接と遠隔の調停は`ray_pointer`の中に最小の形で入っています。
 
-### P3: 空間認識 ※深度系まで実装済み（残りは環境メッシュとアンカー）
+### P3: 空間認識 ※実装済み
 
-- `plane_detection` → `floor_detection` → `scene_mesh` → `occlusion_mesh` → `occlusion_depth`
+- `plane_detection` → `floor_detection` → `scene_mesh` → `occlusion_depth` → リアルタイム3本 → `spatial_anchor` → `marker_tracking`
 - 端末差が大きいので、非対応端末での見え方を毎回確認する
 
 > 実装時のメモ: 最初の`floor_detection`は、Meta Scene APIと「指先でpinchした高さを床にする」手動設定の組み合わせでした。**手動設定は検知ではない**という指摘を受けて作り直しています。Godot 4.6 coreに`OpenXRPlaneTracker`（`XR_EXT_spatial_plane_tracking`）があり、これがAR Foundationの`ARPlaneManager`に当たるベンダー非依存の経路です。
