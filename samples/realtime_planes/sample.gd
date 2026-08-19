@@ -12,8 +12,11 @@ extends Node3D
 ##
 ## 手順は3つです。
 ##   1. 深度マップをCPUへ落とす（`get_environment_depth_map_async`）
-##   2. 視界中央付近を格子状に拾い、逆行列でワールド座標へ戻す
+##   2. 視界中央付近を格子状に拾い、逆行列でXRの基準空間へ戻す（`DepthGrid`）
 ##   3. 格子の縦横の接ベクトルから法線を出す
+##
+## 2の座標変換は`realtime_mesh_collision`と`realtime_plane_clusters`でも同じものが
+## 要るので、規約どおり`shared/depth_grid.gd`へ寄せてあります。
 ##
 ## 深度マップは毎フレーム更新されるわけではなく、CPUへの転送も安価ではありません。
 ## ドキュメントの助言どおり、1秒に1回程度の間隔で引きます。
@@ -24,8 +27,6 @@ const SAMPLE_INTERVAL := 0.8
 const PATCH_EXTENT := 0.25
 ## 一辺あたりのサンプル数。
 const PATCH_STEPS := 7
-## 深度マップの座標系。プラグイン同梱のシェーダーに合わせてある（下の`_unproject`）。
-const NDC_TO_UV_SCALE := 0.5
 ## 面とみなす最短・最長距離。外れ値を捨てる。
 const MIN_DISTANCE := 0.2
 const MAX_DISTANCE := 5.0
@@ -113,36 +114,29 @@ func _on_depth_map(eyes: Array) -> void:
 
 ## 視界中央付近を格子状に拾う。格子の並びは法線を出すのに使うので保つ。
 func _sample_grid(image: Image, inverse: Projection) -> Array:
-	var grid: Array = []
+	var camera_local := (
+		_stage.origin.global_transform.affine_inverse() * _stage.camera.global_position
+	)
+	var grid := DepthGrid.sample(
+		image, inverse, PATCH_STEPS, PATCH_EXTENT, camera_local, MIN_DISTANCE, MAX_DISTANCE
+	)
+
 	var distances: Array[float] = []
 	_sample_count = 0
-
-	for row in PATCH_STEPS:
-		var line: Array = []
-		for column in PATCH_STEPS:
-			# NDCで位置を決める。行が増えるほど下（NDCのyは上が+1）。
-			var ndc_xy := Vector2(
-				(float(column) / (PATCH_STEPS - 1) * 2.0 - 1.0) * PATCH_EXTENT,
-				(1.0 - float(row) / (PATCH_STEPS - 1) * 2.0) * PATCH_EXTENT
-			)
-			var point := _unproject(ndc_xy, image, inverse)
-			var distance := point.distance_to(_stage.camera.global_position)
-			if point == Vector3.ZERO or distance < MIN_DISTANCE or distance > MAX_DISTANCE:
-				line.append(null)
+	for line: Array in grid:
+		for point: Variant in line:
+			if point == null:
 				continue
 
-			line.append(point)
-			distances.append(distance)
+			distances.append((point as Vector3).distance_to(camera_local))
 			_sample_count += 1
 
-		grid.append(line)
-
-	_reject_outliers(grid, distances)
+	_reject_outliers(grid, distances, camera_local)
 	return grid
 
 
 ## 中央値から大きく離れた点を捨てる。手前の物や穴に引っ張られないようにする。
-func _reject_outliers(grid: Array, distances: Array[float]) -> void:
+func _reject_outliers(grid: Array, distances: Array[float], view_origin: Vector3) -> void:
 	if distances.size() < 3:
 		return
 
@@ -155,7 +149,7 @@ func _reject_outliers(grid: Array, distances: Array[float]) -> void:
 			if point == null:
 				continue
 
-			var distance: float = (point as Vector3).distance_to(_stage.camera.global_position)
+			var distance: float = (point as Vector3).distance_to(view_origin)
 			if absf(distance - median) > median * OUTLIER_RATIO:
 				line[column] = null
 				_sample_count -= 1
@@ -197,14 +191,20 @@ func _fit_plane(grid: Array) -> void:
 
 	centroid /= count
 	normal = normal.normalized()
+	# ここまでの座標はXRの基準空間。カメラも同じ空間へ持ってきて比べる。
+	var camera_local := (
+		_stage.origin.global_transform.affine_inverse() * _stage.camera.global_position
+	)
 	# 常に自分の方を向くようにそろえる。裏返っていると板が見えない。
-	if normal.dot(_stage.camera.global_position - centroid) < 0.0:
+	if normal.dot(camera_local - centroid) < 0.0:
 		normal = -normal
 
-	_normal = normal
-	_distance = centroid.distance_to(_stage.camera.global_position)
+	_distance = centroid.distance_to(camera_local)
+	# 表示はワールド座標なので、原点の変換を通してから置く。
+	var to_world := _stage.origin.global_transform
+	_normal = to_world.basis * normal
 	_plane.visible = true
-	_plane.global_transform = Transform3D(_basis_from_normal(normal), centroid)
+	_plane.global_transform = Transform3D(_basis_from_normal(_normal), to_world * centroid)
 
 
 ## 法線からPlaneMesh（XZ平面、+Yが法線）の姿勢を作る。
@@ -212,34 +212,6 @@ func _basis_from_normal(normal: Vector3) -> Basis:
 	var reference := Vector3.UP if absf(normal.dot(Vector3.UP)) < 0.9 else Vector3.FORWARD
 	var right := reference.cross(normal).normalized()
 	return Basis(right, normal, right.cross(normal).normalized())
-
-
-## NDC上の1点を、深度を読んでワールド座標へ戻す。取れない場合はVector3.ZERO。
-##
-## 座標の対応は、プラグインが同梱している再投影シェーダーに合わせてあります。
-## シェーダーは`uv = ndc.xy * 0.5 + 0.5`でテクスチャを引き、深度は`depth * 2.0 - 1.0`で
-## NDCへ広げています。**GodotのUVは上下が逆**（UVのyが増えると画像の下へ進む）なので、
-## NDCのy=+1（視界の上）は画像の下の行に当たります。ここを取り違えると、点群が上下に
-## 鏡写しになり、位置は合っているのに面の向きだけ合わない、という症状になります。
-func _unproject(ndc_xy: Vector2, image: Image, inverse: Projection) -> Vector3:
-	var uv := ndc_xy * NDC_TO_UV_SCALE + Vector2(0.5, 0.5)
-	var pixel := Vector2i(
-		clampi(int(uv.x * image.get_width()), 0, image.get_width() - 1),
-		clampi(int(uv.y * image.get_height()), 0, image.get_height() - 1)
-	)
-	var raw := image.get_pixel(pixel.x, pixel.y).r
-	if is_zero_approx(raw):
-		# シェーダー側も0は「深度なし」として捨てている。
-		return Vector3.ZERO
-
-	var ndc := Vector3(ndc_xy.x, ndc_xy.y, raw * 2.0 - 1.0)
-	var clip := inverse * Vector4(ndc.x, ndc.y, ndc.z, 1.0)
-	if is_zero_approx(clip.w):
-		return Vector3.ZERO
-
-	var local := Vector3(clip.x, clip.y, clip.z) / clip.w
-	# 行列はXRの基準空間なので、原点の変換を通してワールドへ移す。
-	return _stage.origin.global_transform * local
 
 
 func _build_status() -> String:

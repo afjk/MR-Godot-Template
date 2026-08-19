@@ -192,6 +192,8 @@ READMEの冒頭で「どのサンプルが何を示すか」が一覧できる�
 >
 > その後の調査で、**Quest 3にOSレベルのリアルタイム平面検出が無いのはAR Foundationでも同じ**（Meta OpenXRは実行時に検出せずSpace Setupのデータを返す）だと確認できました。一方で**PICO 4 Ultraのruntimeには、平面検出（`XR_BD_spatial_plane`）とリアルタイムの意味ラベル付きメッシュ（`XR_BD_spatial_mesh`）が両方あります**。PICOはKhronos標準のSpatial Entitiesを最初に実装したベンダーでもあるため、既存の`plane_detection`が無改造で通る可能性があります。**次にやるのは実装ではなくPICO実機での確認**です。詳細は[調査メモ](realtime_spatial_investigation.md)にあります。
 >
+> リアルタイム側は`realtime_mesh`（頂点シェーダー）・`realtime_mesh_collision`（CPU＋`ConcavePolygonShape3D`）・`realtime_plane_clusters`（領域拡張による複数平面）の3本まで実装しました。ここで**深度→点群の変換が3サンプル目**になったので、規約どおり`shared/depth_grid.gd`（`DepthGrid`）へ抽出しています。`shared/`に置いたのは座標変換だけで、深度マップの取得はサンプルごとの主題なので各サンプルに残しました。
+>
 > 空間認識の層（`MRGTSpatialManager`相当）は、core・Meta・Android XRの経路が2つ以上そろい、正規化する意味が出てから作ります。
 
 ### P4: 表現・性能、toolkit化の判断

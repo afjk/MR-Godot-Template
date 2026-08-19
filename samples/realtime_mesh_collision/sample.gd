@@ -135,29 +135,12 @@ func _on_depth_map(eyes: Array) -> void:
 
 ## 深度画像を格子状に間引いて、基準空間の点にする。並びは三角形を張るのに使う。
 func _sample_grid(image: Image, inverse: Projection) -> Array:
-	var grid: Array = []
 	var camera_local := (
 		_stage.origin.global_transform.affine_inverse() * _stage.camera.global_position
 	)
-
-	for row in GRID_STEPS:
-		var line: Array = []
-		for column in GRID_STEPS:
-			var ndc_xy := Vector2(
-				(float(column) / (GRID_STEPS - 1) * 2.0 - 1.0) * NDC_EXTENT,
-				(float(row) / (GRID_STEPS - 1) * 2.0 - 1.0) * NDC_EXTENT
-			)
-			var point := _unproject(ndc_xy, image, inverse)
-			var distance := point.distance_to(camera_local)
-			if point == Vector3.ZERO or distance < MIN_DISTANCE or distance > MAX_DISTANCE:
-				line.append(null)
-				continue
-
-			line.append(point)
-
-		grid.append(line)
-
-	return grid
+	return DepthGrid.sample(
+		image, inverse, GRID_STEPS, NDC_EXTENT, camera_local, MIN_DISTANCE, MAX_DISTANCE
+	)
 
 
 ## 格子から三角形を張り、collisionと表示メッシュを作り直す。
@@ -208,29 +191,6 @@ func _is_continuous(a: Variant, b: Variant, c: Variant, d: Variant) -> bool:
 			return false
 
 	return true
-
-
-## NDC上の1点を、深度を読んで基準空間へ戻す。取れない場合はVector3.ZERO。
-##
-## 対応はplugin同梱の再投影シェーダーに合わせてあります。シェーダーは
-## `uv = ndc.xy * 0.5 + 0.5`でテクスチャを引き、深度を`depth * 2.0 - 1.0`でNDCへ
-## 広げています。GodotのUVは上下が逆なので、NDCのy=+1は画像の下の行に当たります。
-func _unproject(ndc_xy: Vector2, image: Image, inverse: Projection) -> Vector3:
-	var uv := ndc_xy * 0.5 + Vector2(0.5, 0.5)
-	var pixel := Vector2i(
-		clampi(int(uv.x * image.get_width()), 0, image.get_width() - 1),
-		clampi(int(uv.y * image.get_height()), 0, image.get_height() - 1)
-	)
-	var raw := image.get_pixel(pixel.x, pixel.y).r
-	if is_zero_approx(raw):
-		# シェーダー側も0は「深度なし」として捨てている。
-		return Vector3.ZERO
-
-	var clip := inverse * Vector4(ndc_xy.x, ndc_xy.y, raw * 2.0 - 1.0, 1.0)
-	if is_zero_approx(clip.w):
-		return Vector3.ZERO
-
-	return Vector3(clip.x, clip.y, clip.z) / clip.w
 
 
 func _throw_ball_on_pinch() -> void:

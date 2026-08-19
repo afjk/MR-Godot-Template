@@ -25,6 +25,7 @@ Meta Quest 3、PICO 4 Ultra、VIVE Focus Vision、Android XR向けの、Mixed Re
 | [リアルタイム平面推定](samples/realtime_planes/) | 深度マップから、見ている先の面をその場で推定する。スキャン不要 | Quest 3 |
 | [リアルタイム環境メッシュ](samples/realtime_mesh/) | 深度マップから毎フレーム更新される環境メッシュを作る。CPU処理なし | Quest 3 |
 | [環境メッシュの当たり判定](samples/realtime_mesh_collision/) | 深度からcollisionを作り、実際の床や机でボールを跳ねさせる | Quest 3 |
+| [リアルタイム複数平面検出](samples/realtime_plane_clusters/) | 深度から複数の平面を同時に見つけ、フレーム間で追跡する | Quest 3 |
 | [深度オクルージョン](samples/occlusion_depth/) | 実物が仮想物体をリアルタイムに隠す。手や動く物にも効く | Quest 3 |
 
 環境メッシュとアンカーの永続化は、[検討メモ](#今後の検討)の順で追加していきます。
@@ -68,6 +69,7 @@ shared/xr_rig.tscn            XROrigin3D、カメラ、左右コントローラ�
 shared/mr_stage.tscn/.gd      MRの土台。OpenXR初期化、パススルー、セッション状態
 shared/sample_bootstrap.gd    Autoload。リグの無いシーンを単体実行したとき土台を挿す
 shared/sample_info.gd         1サンプルの説明。ランチャーが一覧に使う
+shared/depth_grid.gd          環境深度の画像をXR基準空間の点の格子に変換する
 samples/<name>/               sample.tscn / sample.gd / README.md
 samples/samples.tres          サンプル一覧の定義
 project.godot                 Godot 4.6 / Compatibility / OpenXR設定
