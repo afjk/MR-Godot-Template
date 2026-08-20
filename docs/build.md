@@ -241,6 +241,18 @@ GodotとAndroid SDKの導入、OpenXR Vendors plugin、Android Gradle Build Temp
 
 このプロジェクトは標準OpenXRのAlpha environment blendと`XR_EXT_hand_tracking`を使用します。`project.godot`に残っている`xr/openxr/extensions/meta/passthrough`という設定名は、OpenXR Vendors pluginがPICOでも利用する`XR_FB_passthrough` fallbackを有効にするために必要です。PICO runtimeがネイティブAlpha blendを提供する場合はruntime側が優先されます。
 
+#### 空間データの権限は自動で入る
+
+平面検出には`com.picovr.permission.SPATIAL_DATA`が要りますが、**Export presetに手で足す項目はありません。** OpenXR Vendors 5.1.0のPICO用export pluginが、`xr/openxr/extensions/spatial_entity/enabled`（このプロジェクトでは有効）を見てmanifestへ自動で追加します。実行時の要求も、pluginが起動時にまとめて行います（`xr/openxr/extensions/automatically_request_runtime_permissions`が既定の有効のまま）。
+
+インストール後に確認するなら次のとおりです。
+
+```bash
+adb shell dumpsys package com.example.pico4ultramrgodottemplate | grep -i spatial
+```
+
+権限が出てこない場合は、`OpenXR Vendors > PICO`が有効になっているかを先に確認してください。
+
 ### 3. PICO用APKをビルド
 
 GodotのExport画面で`PICO 4 Ultra`を選び、`Export Project`からDebug APKを出力します。コマンドラインでは次のようにビルドできます。
@@ -382,6 +394,24 @@ Meta、PICO、VIVEと違い、**Android XRのパススルーにはベンダー�
 
 `shared/mr_stage.gd`は`get_supported_environment_blend_modes()`でベンダー非依存に対応blend modeを判定しているため、Android XR向けにコードを変更する必要はありません。
 
+#### 空間認識の権限も自動で入る
+
+`androidxr_planes`と`androidxr_scene_mesh`には空間認識の権限が要りますが、**Export presetに手で足す項目はありません。** OpenXR Vendors 5.1.0のAndroid XR用export pluginが、`project.godot`の設定を見てmanifestへ自動で追加し、実行時の要求も起動時に行います。
+
+| project.godotの設定 | 入るmanifest項目 |
+| --- | --- |
+| `androidxr/scene_meshing=true` | `android.permission.SCENE_UNDERSTANDING_FINE` |
+| `androidxr/trackables=true` | `android.permission.SCENE_UNDERSTANDING_COARSE`（FINEがある場合は不要） |
+| `xr/openxr/extensions/hand_tracking=true` | `android.permission.HAND_TRACKING` |
+
+このプロジェクトは3つとも有効なので、**FINEが1つ入り、trackablesもそれで通ります**（pluginは`COARSE || FINE`で判定しています）。`Use Experimental Features`は不要です。プラグイン同梱のAndroid XRサンプルも無効のままです。
+
+インストール後の確認はこうします。
+
+```bash
+adb shell dumpsys package com.example.androidxrmrgodottemplate | grep -i "SCENE_UNDERSTANDING\|HAND_TRACKING"
+```
+
 ### 3. Android XR用APKをビルド
 
 ```bash
@@ -407,6 +437,23 @@ adb install -r build/android-xr-mr-template.apk
 adb uninstall com.example.androidxrmrgodottemplate
 adb install build/android-xr-mr-template.apk
 ```
+
+### 5. Android XR固有のサンプルを確認する
+
+Android XRは、このリポジトリで**OSがリアルタイムに平面とメッシュを返す唯一の端末**です。次の2本がその経路です。
+
+| サンプル | 見るところ |
+| --- | --- |
+| [Android XRの平面検出](../samples/androidxr_planes/) | 権限が降りたあと、見回すだけで平面が増えるか。机を動かしたら追従するか。ラベル（床・壁・天井・机）が合っているか |
+| [Android XRの環境メッシュ](../samples/androidxr_scene_mesh/) | 「小片: N」が増えるか。歩き回ると形が更新されるか。「意味ラベル: あり」と出るか |
+
+どちらも画面に状態を出します。何も出ないときは、まず次の順で切り分けてください。
+
+1. 「この端末は…を公開していません」→ extensionそのものが無い（設定かpluginの問題）
+2. 「空間認識の権限を待っています」→ 権限が降りていない。上の`dumpsys`で確認
+3. 状態は出るが数が0のまま → 権限は降りている。見回す時間が足りないか、runtime側が検出できていない
+
+比較のために、Quest 3向けの[平面検出](../samples/plane_detection/)（事前スキャン）と[リアルタイム複数平面検出](../samples/realtime_plane_clusters/)（深度から自作）も同じ端末で動かすと、3つの経路の違いがはっきりします。
 
 > **未検証**: このpresetはAndroid XR実機で動作確認していません。Export設定はGodot OpenXR Vendorsの`demo/export_presets.cfg`のAndroid XR presetに合わせています。
 

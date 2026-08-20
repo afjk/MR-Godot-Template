@@ -25,7 +25,7 @@ AR Foundationの`ARPlaneManager`のような「どの端末でも同じAPI」は
 
 | AR Foundation | 相当するもの（Godot） | 状況 |
 | --- | --- | --- |
-| `ARPlaneManager` | core Spatial Entities（plane）／`OpenXRAndroidTrackablePlaneTracker`／Metaの`OpenXRFbSceneManager` | 3経路あり、要正規化 |
+| `ARPlaneManager` | core Spatial Entities（`OpenXRPlaneTracker`）／`OpenXRAndroidTrackablePlaneTracker`／Metaの`OpenXRFbSceneManager` | 3経路あり、要正規化。core経路は`samples/plane_detection/`で実装済み |
 | `ARMeshManager` | `OpenXRAndroidSceneMeshing`／`OpenXRMetaSpatialEntityMeshExtension` | Quest 3とAndroid XRのみ |
 | `AROcclusionManager`（environment depth） | `OpenXRMetaEnvironmentDepth`／`OpenXRAndroidEnvironmentDepth` | Quest 3とAndroid XRのみ |
 | `AROcclusionManager`（human segmentation） | **相当機能なし** | iOS/ARKit固有。standalone MRには無い（第7節C） |
@@ -42,15 +42,17 @@ OpenXR Vendors pluginが公開しているクラス（`doc_classes/`）から読
 
 | 機能 | Quest 3 | PICO 4 Ultra | VIVE Focus Vision | Android XR |
 | --- | --- | --- | --- | --- |
-| 平面 | ○ Meta Scene | △ core EXT次第（要実機確認） | ✕ | ○ Trackables |
-| 環境メッシュ | ○ Scene mesh（事前スキャン） | ✕（要確認） | ✕ | ○ Scene Meshing（逐次更新） |
+| 平面 | ○ Meta Scene（事前スキャン） | ○ runtimeにある（Godotから届くかは要実機確認） | ✕ | ○ Trackables（リアルタイム） |
+| 環境メッシュ | ○ Scene mesh（事前スキャン） | ○ リアルタイム＋意味ラベル（Godot側は未対応） | ✕ | ○ Scene Meshing（逐次更新） |
 | 深度（オクルージョン） | ○ `OpenXRMetaEnvironmentDepth` | ✕ | ✕ | ○ `OpenXRAndroidEnvironmentDepth` |
-| アンカー／永続化 | ○ | △ core EXT次第 | ✕ | ○ |
+| アンカー／永続化 | ○ | ○ runtimeにある（Godot側は未対応） | ✕ | ○ |
 | マーカー（QR） | △ core EXT次第 | △ | ✕ | ○ |
 | ライト推定 | ✕ | ✕ | ✕ | ○ |
 | カメラ画像 | △ Passthrough Camera API（権限必須） | ✕ | ✕ | △ |
 
-VIVE Focus Visionは、Vendors pluginが`OpenXRHtcPassthroughExtension`と顔追跡しか公開しておらず、**空間認識は現状ゼロ**です。PICO 4 Ultraも専用クラスが無いため、Godot 4.6 coreのSpatial Entities（`XR_EXT_spatial_*`）をruntimeが公開していれば動く、という位置づけになります。Khronosの発表ではMeta・Google・PICO・Varjoが対応を表明しているので、**時間が解決する可能性はありますが、今は前提にできません**。
+VIVE Focus Visionは、Vendors pluginが`OpenXRHtcPassthroughExtension`と顔追跡しか公開しておらず、**空間認識は現状ゼロ**です。
+
+**PICO 4 Ultraは調査の結果、当初の想定より大幅に良いことが分かりました。** ByteDanceのベンダー拡張（`XR_BD_spatial_sensing` / `_plane` / `_mesh` / `_anchor`）がOpenXRレジストリに登録済みで、平面検出もリアルタイムの意味ラベル付きメッシュもruntimeが持っています。さらにPICOは**Khronos標準のSpatial Entities（`XR_EXT_spatial_*`）を最初に実装したベンダー**で、Godotの実装検証にも協力しています。Godot 4.6 coreのSpatial Entitiesがそのまま通る可能性が高く、[`plane_detection`](../samples/plane_detection/)サンプルを実機で試すのが次の一手です。詳細は[リアルタイム調査メモの第3節](realtime_spatial_investigation.md#3-pico-4-ultraは事情が違う)にあります。
 
 この非対称性が設計をほぼ決めます。**「取れない端末で何を見せるか」がAPIの主要な設計対象**です。
 
@@ -114,9 +116,11 @@ MRで最初に必要になり、かつ全機種で何かしら答えを返せる
 
 3段構えです。
 
-1. **平面API**: `FLOOR`ラベルの平面。Quest 3（Scene）とAndroid XR（Trackables）で取れる
+1. **平面API**: `floor`ラベルの平面。coreの`OpenXRPlaneTracker`、Metaのscene entity、Android XRのTrackablesのいずれか
 2. **環境メッシュ**: 平面が無い場合、メッシュ内の最下位の水平面を推定
-3. **Local Floor**: どちらも無い場合、reference spaceがLocal Floorなので**`y = 0`が床**。本テンプレートは既に`xr/openxr/reference_space=2`でこれを使っています
+3. **Local Floor**: どちらも無い場合、reference spaceがLocal Floorなので**`y = 0`が床**。このプロジェクトは既に`xr/openxr/reference_space=2`でこれを使っています
+
+> 実装メモ（`samples/floor_detection/`）: 1と3、およびMetaのscene entity経路を実装しました。2（環境メッシュからの推定）は、メッシュ取得そのものが未実装のため入っていません。**「指先で高さを指定する」手動設定は検知ではない**ため、このサンプルからは外しています。アプリ側で用意するのは構いませんが、床面検知の説明に混ぜると誤解を招きます。
 
 ```gdscript
 class_name MRGTFloor
@@ -130,6 +134,8 @@ var confidence: float
 3段目は「検知」ではなく「仮定」ですが、**PICOとVIVEではこれが唯一の答え**になります。出所（`source`）を返す設計にしておけば、アプリ側は「精度が要る処理は`source != "fallback"`のときだけ」と書けます。ユーザーが手で高さを微調整できるUIも用意します。
 
 受け入れ条件: 4機種すべてで床の高さが返り、その上に立方体を置いて沈まない・浮かないこと。Quest 3では実際の床の高さと5cm以内で一致すること。
+
+> **重要な追記**: Quest 3には**OSレベルのリアルタイム平面検出がありません**。AR Foundation（Unity + Meta OpenXR）も同じで、返ってくるのはSpace Setupの事前スキャン結果です。リアルタイムにやるならDepth APIから自分で作るしかありません。調査と実現方法は[リアルタイム平面認識・メッシュ生成の調査](realtime_spatial_investigation.md)にまとめました。
 
 ## 6. 環境メッシュ
 
@@ -162,7 +168,7 @@ var confidence: float
 | 層 | 内容 | 実現手段 | 対応 | 判断 |
 | --- | --- | --- | --- | --- |
 | **A. 意味ラベル** | 平面・物体に「床／壁／机／ソファ」等の意味を付ける | Meta Sceneのsemantic label、Android XRのplane label＋`OpenXRAndroidTrackableObjectTracker` | Quest 3 / Android XR | **採用** |
-| **B. 深度オクルージョン** | 実物（手・人・家具）が仮想物体を隠す | `OpenXRMetaEnvironmentDepth` / `OpenXRAndroidEnvironmentDepth` | Quest 3 / Android XR | **採用** |
+| **B. 深度オクルージョン** | 実物（手・人・家具）が仮想物体を隠す | `OpenXRMetaEnvironmentDepth` / `OpenXRAndroidEnvironmentDepth` | Quest 3 / Android XR | **採用**（`samples/occlusion_depth/`で実装済み） |
 | **C. ピクセル単位** | 任意物体・人物のマスクを画素単位で得る | Passthrough Camera API（Camera2）＋端末上のML推論 | Quest 3のみ | 研究枠 |
 
 ### A: 意味ラベル（安価で用途が広い）
@@ -172,6 +178,8 @@ var confidence: float
 ### B: 深度オクルージョン（見た目への寄与が最大）
 
 環境深度マップで仮想物体を遮蔽します。メッシュによるオクルージョン（第6節）との違いは、**動くもの（手・人・持ち込まれた物）にも効く**ことです。Vendors pluginはCPU側から深度マップを取得するメソッドも持っています。
+
+> 実装メモ: Metaについては`OpenXRMetaEnvironmentDepth`（`VisualInstance3D`）を置くだけで遮蔽が効きました（`samples/occlusion_depth/`）。シェーダーを書く必要はありません。CPU側の`get_environment_depth_map_async()`は、事前スキャンに頼らないリアルタイムの平面推定に使えます（`samples/realtime_planes/`）。**平面APIが返すデータが事前スキャンかリアルタイムかはruntime依存**で、Quest 3では前者です。この違いは利用者にとって大きいので、サンプルを分けています。
 
 - 実装は「深度テクスチャを受け取り、シーンの深度と比較して破棄する」シェーダー経路になります
 - **Compatibility rendererで深度テクスチャをシェーダーへ渡せるか**が最大の技術的未確認点です。ここが通らない場合、Bはメッシュオクルージョン止まりになります
@@ -225,7 +233,7 @@ AR Foundationのhuman segmentation stencilはiOS固有機能で、**standalone M
 | 項目 | 内容 | 対応 |
 | --- | --- | --- |
 | Compatibility rendererでの深度経路 | 深度テクスチャをシェーダーへ渡せるかが未確認 | S3のオクルーダー材質検証を先に単独で行い、駄目ならメッシュ遮蔽止まり |
-| 端末の非対称性 | VIVEは空間認識ゼロ、PICOは未知数 | capability API前提。「無い」を正常系として設計 |
+| 端末の非対称性 | VIVEは空間認識ゼロ。PICOはruntimeに機能があるがGodotから届くか未確認 | capability API前提。「無い」を正常系として設計 |
 | 権限 | Meta: Scene API（`com.oculus.permission.USE_SCENE`）、Android XR: `android.permission.SCENE_UNDERSTANDING_COARSE`（dangerous）、カメラ: `horizonos.permission.HEADSET_CAMERA` | export presetと実行時要求の両方を手順化してREADMEへ |
 | 部屋未スキャン | Quest 3でSpace Setup未実施なら結果は空 | `NEEDS_SETUP`を返し、Scene Captureへ誘導 |
 | メッシュのコスト | collision生成とメモリ | 平面のみ既定、チャンク単位、フレーム分散 |

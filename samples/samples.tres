@@ -1,7 +1,15 @@
-[gd_resource type="Resource" script_class="SampleLibrary" load_steps=12 format=3]
+[gd_resource type="Resource" script_class="SampleLibrary" load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://shared/sample_library.gd" id="1_library"]
 [ext_resource type="Script" path="res://shared/sample_info.gd" id="2_info"]
+
+[sub_resource type="Resource" id="Sample_minimal"]
+script = ExtResource("2_info")
+title = "最小構成"
+description = "MRの土台に立方体を1つ置くだけ。新しいプロジェクトの出発点。"
+scene = "res://samples/minimal/sample.tscn"
+devices = 15
+notes = "持ち出しの雛形"
 
 [sub_resource type="Resource" id="Sample_passthrough"]
 script = ExtResource("2_info")
@@ -75,6 +83,134 @@ scene = "res://samples/hand_menu/sample.tscn"
 devices = 15
 notes = "Hand Trackingが必要"
 
+[sub_resource type="Resource" id="Sample_two_hand_manipulation"]
+script = ExtResource("2_info")
+title = "両手操作"
+description = "両手で掴んで回転・拡縮する。倍率の制約つき。片手なら移動と回転。"
+scene = "res://samples/two_hand_manipulation/sample.tscn"
+devices = 15
+notes = ""
+
+[sub_resource type="Resource" id="Sample_plane_detection"]
+script = ExtResource("2_info")
+title = "平面検出"
+description = "runtimeが検出した平面（床・壁・天井・机）を可視化する。ARPlaneManager相当。"
+scene = "res://samples/plane_detection/sample.tscn"
+devices = 15
+notes = "runtimeが平面検出を公開する場合のみ"
+
+[sub_resource type="Resource" id="Sample_floor_detection"]
+script = ExtResource("2_info")
+title = "床面検知"
+description = "検出された平面から床を選び、取れない端末ではLocal Floorの仮定に落とす。"
+scene = "res://samples/floor_detection/sample.tscn"
+devices = 15
+notes = "Quest 3はSpace Setupが必要"
+
+[sub_resource type="Resource" id="Sample_scene_mesh"]
+script = ExtResource("2_info")
+title = "部屋メッシュ"
+description = "事前スキャン済みの部屋の形を取り出し、当たり判定と可視化を作る。"
+scene = "res://samples/scene_mesh/sample.tscn"
+devices = 1
+notes = "Quest 3のScene APIとSpace Setup"
+
+[sub_resource type="Resource" id="Sample_realtime_planes"]
+script = ExtResource("2_info")
+title = "リアルタイム平面推定"
+description = "深度マップから、見ている先の面をその場で推定する。事前スキャン不要。"
+scene = "res://samples/realtime_planes/sample.tscn"
+devices = 1
+notes = "Quest 3の環境深度"
+
+[sub_resource type="Resource" id="Sample_realtime_mesh"]
+script = ExtResource("2_info")
+title = "リアルタイム環境メッシュ"
+description = "深度マップから毎フレーム更新される環境メッシュを作る。CPU処理なし。"
+scene = "res://samples/realtime_mesh/sample.tscn"
+devices = 1
+notes = "Quest 3の環境深度"
+
+[sub_resource type="Resource" id="Sample_realtime_mesh_collision"]
+script = ExtResource("2_info")
+title = "環境メッシュの当たり判定"
+description = "深度からConcavePolygonShape3Dを作り、実際の床や机でボールを跳ねさせる。"
+scene = "res://samples/realtime_mesh_collision/sample.tscn"
+devices = 1
+notes = "Quest 3の環境深度"
+
+[sub_resource type="Resource" id="Sample_realtime_plane_clusters"]
+script = ExtResource("2_info")
+title = "リアルタイム複数平面検出"
+description = "深度から複数の平面を同時に見つけ、フレーム間で追跡する。ARPlaneManagerの自作版。"
+scene = "res://samples/realtime_plane_clusters/sample.tscn"
+devices = 1
+notes = "Quest 3の環境深度"
+
+[sub_resource type="Resource" id="Sample_spatial_anchor"]
+script = ExtResource("2_info")
+title = "空間アンカー"
+description = "実空間の位置に印を打ち、アプリを再起動しても同じ場所に残す。"
+scene = "res://samples/spatial_anchor/sample.tscn"
+devices = 15
+notes = "runtimeがアンカーと永続化を公開する場合のみ"
+
+[sub_resource type="Resource" id="Sample_occlusion_depth"]
+script = ExtResource("2_info")
+title = "深度オクルージョン"
+description = "実物が仮想物体をリアルタイムに隠す。手や動く物にも効く。"
+scene = "res://samples/occlusion_depth/sample.tscn"
+devices = 1
+notes = "Quest 3の環境深度"
+
+[sub_resource type="Resource" id="Sample_marker_tracking"]
+script = ExtResource("2_info")
+title = "マーカー追跡"
+description = "QRコードやArUcoマーカーを見つけ、その場所を既知の座標として使う。"
+scene = "res://samples/marker_tracking/sample.tscn"
+devices = 15
+notes = "runtimeがマーカー追跡を公開する場合のみ"
+
+[sub_resource type="Resource" id="Sample_androidxr_planes"]
+script = ExtResource("2_info")
+title = "Android XRの平面検出"
+description = "OSが逐次見つけた平面をそのまま受け取る。事前スキャン不要で追従する。"
+scene = "res://samples/androidxr_planes/sample.tscn"
+devices = 8
+notes = "Android XR。実機未検証"
+
+[sub_resource type="Resource" id="Sample_androidxr_scene_mesh"]
+script = ExtResource("2_info")
+title = "Android XRの環境メッシュ"
+description = "OSが逐次更新する部屋のメッシュを、意味ラベル付きで差分更新する。"
+scene = "res://samples/androidxr_scene_mesh/sample.tscn"
+devices = 8
+notes = "Android XR。実機未検証"
+
+[sub_resource type="Resource" id="Sample_composition_layer"]
+script = ExtResource("2_info")
+title = "Composition layer"
+description = "文字をruntimeに直接合成させて、通常の3D描画より鮮明に出す。"
+scene = "res://samples/composition_layer/sample.tscn"
+devices = 15
+notes = "非対応runtimeでは通常描画に落ちます"
+
+[sub_resource type="Resource" id="Sample_passthrough_style"]
+script = ExtResource("2_info")
+title = "パススルーの色調整"
+description = "実世界の見え方そのものをruntime側で加工する。描画負荷はゼロ。"
+scene = "res://samples/passthrough_style/sample.tscn"
+devices = 1
+notes = "Quest 3のXR_FB_passthrough"
+
+[sub_resource type="Resource" id="Sample_performance"]
+script = ExtResource("2_info")
+title = "性能の見方"
+description = "foveationとMSAAを切り替えて、効き方を実機で確かめる。"
+scene = "res://samples/performance/sample.tscn"
+devices = 15
+notes = ""
+
 [resource]
 script = ExtResource("1_library")
-samples = Array[Resource]([SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu")])
+samples = Array[Resource]([SubResource("Sample_minimal"), SubResource("Sample_passthrough"), SubResource("Sample_hand_tracking"), SubResource("Sample_controller_models"), SubResource("Sample_session_lifecycle"), SubResource("Sample_poke_button"), SubResource("Sample_ray_pointer"), SubResource("Sample_grab_object"), SubResource("Sample_ui_panel_2d"), SubResource("Sample_hand_menu"), SubResource("Sample_two_hand_manipulation"), SubResource("Sample_plane_detection"), SubResource("Sample_floor_detection"), SubResource("Sample_scene_mesh"), SubResource("Sample_realtime_planes"), SubResource("Sample_realtime_mesh"), SubResource("Sample_realtime_mesh_collision"), SubResource("Sample_realtime_plane_clusters"), SubResource("Sample_occlusion_depth"), SubResource("Sample_spatial_anchor"), SubResource("Sample_marker_tracking"), SubResource("Sample_androidxr_planes"), SubResource("Sample_androidxr_scene_mesh"), SubResource("Sample_composition_layer"), SubResource("Sample_passthrough_style"), SubResource("Sample_performance")])

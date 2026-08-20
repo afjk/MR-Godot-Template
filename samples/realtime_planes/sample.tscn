@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://samples/realtime_planes/sample.gd" id="1_sample"]
+
+[sub_resource type="StandardMaterial3D" id="Material_plane"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.75, 0.25, 0.35)
+cull_mode = 2
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_estimate"]
+material = SubResource("Material_plane")
+size = Vector2(0.4, 0.4)
+
+[node name="RealtimePlanesSample" type="Node3D"]
+script = ExtResource("1_sample")
+
+[node name="Plane" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_estimate")
+
+[node name="Status" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, -1.2)
+pixel_size = 0.0007
+text = ""
+font_size = 34
+outline_size = 18

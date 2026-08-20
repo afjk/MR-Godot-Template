@@ -1,6 +1,6 @@
 # サンプル集としての構成 検討メモ
 
-このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1（骨格と基礎4サンプル）とP2（インタラクション5サンプル）は実装済みです。
+このリポジトリを「MRアプリを作るためのサンプル集」として育てるための構成案です。第8節のP1からP4まで、計画したサンプルはひととおり実装済みです（`occlusion_mesh`のみ、Godotの制約により見送り）。
 
 関連: [インタラクション基盤の検討](mr_toolkit_design.md) / [空間認識の検討](spatial_understanding_design.md)
 
@@ -40,6 +40,23 @@ samples/
   grab_object/
   ui_panel_2d/
   hand_menu/
+  two_hand_manipulation/
+  plane_detection/
+  floor_detection/
+  scene_mesh/
+  realtime_planes/
+  realtime_mesh/
+  realtime_mesh_collision/
+  realtime_plane_clusters/
+  occlusion_depth/
+  spatial_anchor/
+  marker_tracking/
+  androidxr_planes/
+  androidxr_scene_mesh/
+  composition_layer/
+  passthrough_style/
+  performance/
+  minimal/
   samples.tres            一覧の定義（タイトル・説明・対応端末・シーンパス）
 docs/                     ビルド手順、トラブルシューティング、検討メモ
 export_presets.cfg        4機種分。APKは全サンプル入りの1本
@@ -99,13 +116,19 @@ export_presets.cfg        4機種分。APKは全サンプル入りの1本
 
 | サンプル | 内容 | 対応 |
 | --- | --- | --- |
-| `floor_detection` | 床面検知の3段構え（平面→メッシュ→Local Floor） | 全機種（精度は端末差） |
-| `plane_detection` | 平面と意味ラベル、平面への配置 | Quest 3 / Android XR |
-| `scene_mesh` | 部屋メッシュの取得、collision、可視化 | Quest 3 / Android XR |
-| `occlusion_mesh` | メッシュで実物が仮想物体を隠す（深度書き込み＋透明） | Quest 3 / Android XR |
-| `occlusion_depth` | 環境深度による動的オクルージョン（手・人にも効く） | Quest 3 / Android XR |
-| `spatial_anchor` | アンカーの生成・永続化・再読込 | Quest 3 / Android XR |
+| `plane_detection` | 検出された平面と意味ラベルの可視化（ARPlaneManager相当） | runtime次第 |
+| `floor_detection` | 検出結果から床を選ぶ。取れなければLocal Floorの仮定 | 全機種（精度は端末差） |
+| `scene_mesh` | 部屋メッシュの取得、collision、可視化 | Quest 3 |
+| ~~`occlusion_mesh`~~ | メッシュで実物が仮想物体を隠す → **見送り**（下の注記） | — |
+| `realtime_planes` | 深度マップから見ている先の面をその場で推定 | Quest 3 |
+| `realtime_mesh` | 深度から毎フレーム更新される環境メッシュ（頂点シェーダー） | Quest 3 |
+| `realtime_mesh_collision` | 同上のCPU版。`ConcavePolygonShape3D`で当たり判定 | Quest 3 |
+| `realtime_plane_clusters` | 深度から複数平面を検出し、フレーム間で追跡 | Quest 3 |
+| `occlusion_depth` | 環境深度による動的オクルージョン（手・人にも効く） | Quest 3 |
+| `spatial_anchor` | アンカーの生成・永続化・再読込 | runtime次第 |
 | `marker_tracking` | QRマーカーを基準に配置 | 端末次第 |
+| `androidxr_planes` | OSによるリアルタイム平面検出 | Android XR |
+| `androidxr_scene_mesh` | OSによる逐次更新の環境メッシュ | Android XR |
 
 ### 表現・性能
 
@@ -115,7 +138,9 @@ export_presets.cfg        4機種分。APKは全サンプル入りの1本
 | `passthrough_style` | パススルーの色調整（Meta Color LUT等） | Quest 3 |
 | `performance` | foveation、MSAA、負荷計測の見え方 | 全機種 |
 
-オクルージョンを**2本に分けている**のが要点です。メッシュによる静的な遮蔽（`occlusion_mesh`）と、深度による動的な遮蔽（`occlusion_depth`）は、必要な端末機能も実装も別物で、前者だけでも「机の裏に物が隠れる」体験は作れます。詳細は[空間認識の検討メモ](spatial_understanding_design.md)の第6・7節にあります。
+当初はオクルージョンを**2本に分ける**計画でした。メッシュによる静的な遮蔽（`occlusion_mesh`）と、深度による動的な遮蔽（`occlusion_depth`）です。しかし前者は**Godot 4.6のCompatibility rendererでは書けない**ことが分かり、見送りました（色を書かず深度だけ書くマテリアルが作れないため。[調査メモ](realtime_spatial_investigation.md)第7節）。実物での遮蔽は`occlusion_depth`の方式が正解です。
+
+もう1つ、リアルタイム系が計画より3本増えています。Quest 3のOSがリアルタイム平面検出を提供しないと分かったため、深度から自作する経路を用意したものです。
 
 ## 5. ランチャー
 
@@ -124,6 +149,8 @@ export_presets.cfg        4機種分。APKは全サンプル入りの1本
 - サンプル中は「サンプル一覧へ戻る」パネルが出ており、いつでも戻れる
 - 選択は、コントローラーのaim poseからのレイと`select`アクション、Hand Trackingでは視線＋pinch、デスクトップでは上下キーとEnter
 
+> 実装時のメモ（ページ送り）: サンプルが26本になった時点で、**「全部を1画面に収めて文字を詰める」方式が破綻しました**。9本のときは間隔と文字を縮めて収まっていましたが、26本では1行が2cm強、文字が13ptになり読めません。1ページ8本のページ送りに変えています。文字と間隔は常に原寸で、ページ送りは項目と同じ見た目のボタン（最後の次は先頭へ戻る）とデスクトップの左右キーです。
+>
 > 実装時のメモ: 一覧は`SubViewport`の2D UIではなく、`Label3D`と`Area3D`による3Dノードで作りました。2D UIを3D面に出す仕組みは`ui_panel_2d`サンプルの主題なので、ランチャーがそれを先取りしないためです。汎用のポインタもまだ作らず、ランチャー専用の`scripts/launcher_pointer.gd`に閉じています。
 
 ただし**ランチャーはサンプルではない**ので、`shared/`ではなく専用の場所に置き、規約（200行以内など）の対象外とします。
@@ -173,14 +200,35 @@ READMEの冒頭で「どのサンプルが何を示すか」が一覧できる�
 >
 > 一方、**`shared/interaction/`はまだ作っていません。** interactor/interactableの抽象が要るのは「複数のinteractableを登録して調停する」段階からで、5サンプルはいずれも対象が数個で、それぞれの当たり判定が主題そのものでした。近接と遠隔の調停は`ray_pointer`の中に最小の形で入っています。
 
-### P3: 空間認識
+### P3: 空間認識 ※実装済み
 
-- `floor_detection` → `plane_detection` → `scene_mesh` → `occlusion_mesh` → `occlusion_depth`
+- `plane_detection` → `floor_detection` → `scene_mesh` → `occlusion_depth` → リアルタイム3本 → `spatial_anchor` → `marker_tracking`
 - 端末差が大きいので、非対応端末での見え方を毎回確認する
 
-### P4: 表現・性能、toolkit化の判断
+> 実装時のメモ: 最初の`floor_detection`は、Meta Scene APIと「指先でpinchした高さを床にする」手動設定の組み合わせでした。**手動設定は検知ではない**という指摘を受けて作り直しています。Godot 4.6 coreに`OpenXRPlaneTracker`（`XR_EXT_spatial_plane_tracking`）があり、これがAR Foundationの`ARPlaneManager`に当たるベンダー非依存の経路です。
+>
+> いまは検出そのものを見せる`plane_detection`と、そこから床を1つ選ぶ`floor_detection`に分けています。`project.godot`には`xr/openxr/extensions/spatial_entity/*`を追加しました。
+>
+> さらに実機確認で「これは事前スキャンのデータを読むタイプで、リアルタイム検出が欲しい」という指摘を受けました。**平面APIが返すデータの出所（事前スキャンか、その場の検出か）はruntime依存で、OpenXRの仕様は区別しません。** Quest 3ではSpace Setupの結果です。その場の検出が要る場合は環境深度から自分で作るしかないため、`realtime_planes`（深度マップから面を推定）と`occlusion_depth`（深度によるリアルタイム遮蔽）を追加しました。この2本はQuest 3限定です。
+>
+> その後の調査で、**Quest 3にOSレベルのリアルタイム平面検出が無いのはAR Foundationでも同じ**（Meta OpenXRは実行時に検出せずSpace Setupのデータを返す）だと確認できました。一方で**PICO 4 Ultraのruntimeには、平面検出（`XR_BD_spatial_plane`）とリアルタイムの意味ラベル付きメッシュ（`XR_BD_spatial_mesh`）が両方あります**。PICOはKhronos標準のSpatial Entitiesを最初に実装したベンダーでもあるため、既存の`plane_detection`が無改造で通る可能性があります。**次にやるのは実装ではなくPICO実機での確認**です。詳細は[調査メモ](realtime_spatial_investigation.md)にあります。
+>
+> `occlusion_mesh`は**作らないことにしました**。Alpha blendのパススルーではアルファ0が「実世界を見せる」意味になるため、オクルーダーは色を書かず深度だけを書く必要がありますが、Godot 4.6のCompatibility rendererにその指定がありません（`ALPHA`に書くと透明パスへ回され、不透明パスの仮想物体を隠せない）。stencilも「透明パスでしか読めない」制限があり同じ壁に当たります。実物での遮蔽は`occlusion_depth`の方式が正解で、こちらは実機で動作済みです。詳細は[調査メモ](realtime_spatial_investigation.md)第7節。
+>
+> リアルタイム側は`realtime_mesh`（頂点シェーダー）・`realtime_mesh_collision`（CPU＋`ConcavePolygonShape3D`）・`realtime_plane_clusters`（領域拡張による複数平面）の3本まで実装しました。ここで**深度→点群の変換が3サンプル目**になったので、規約どおり`shared/depth_grid.gd`（`DepthGrid`）へ抽出しています。`shared/`に置いたのは座標変換だけで、深度マップの取得はサンプルごとの主題なので各サンプルに残しました。
+>
+> 空間認識の層（`MRGTSpatialManager`相当）は、core・Meta・Android XRの経路が2つ以上そろい、正規化する意味が出てから作ります。
 
+### P4: 表現・性能、toolkit化の判断 ※サンプルは実装済み
+
+- `composition_layer`・`passthrough_style`・`performance`の3本
 - サンプルが揃った段階で、`shared/`に溜まったものを`addons/mrgt/`として切り出すかを判断する
+
+> 実装時のメモ: `composition_layer`は、比較対象として同じ内容を通常の板にも貼っています。**鮮明さの差は並べないと分からない**ので、これは説明文よりも効きます。
+>
+> `passthrough_style`で気をつけたのは後始末です。パススルーのフィルタはruntime側の状態なので、加工したままサンプルを抜けるとランチャーへ戻っても色が変わったままになります。`_exit_tree`で無効化しています。同じ理由で、フィルタを無効化するときだけは`set_passthrough_filter(DISABLED)`という専用の呼び出しが要ります（設定用の関数はどれも「設定と同時にそのフィルタへ切り替える」動きなので、切る手段が無い）。
+>
+> `performance`は、負荷が軽いと設定を変えても数字が動かないので、立方体を240個出しています。**測れないサンプルには意味がない**ためです。
 
 ## 9. リポジトリを分けるか
 
@@ -206,22 +254,42 @@ READMEの冒頭で「どのサンプルが何を示すか」が一覧できる�
 
 3つ目は現実的に起こり得ます。セグメンテーションのC層（[空間認識メモ](spatial_understanding_design.md)第7節）は、その時点で別リポジトリ行きです。
 
-### 「最小構成から始めたい人」への対処
+### 「最小構成から始めたい人」への対処 ※実装済み
 
-リポジトリを分けたくなる動機の多くは、実はこれです。同じリポジトリ内で解決します。
+リポジトリを分けたくなる動機の多くは、実はこれです。同じリポジトリ内で解決しました。
 
-- `samples/minimal/`（パススルー＋リグだけ）を1本用意する
-- READMEに「新規プロジェクトの始め方: `shared/`と好きなサンプル1つをコピーする」を明記する
+- `samples/minimal/`（パススルー＋リグだけ）を1本用意した
+- READMEに「新しいプロジェクトを始める」の5手順を書いた
 
 サンプルが`shared/`にしか依存しない規約（第3節）を守っていれば、この持ち出しは実際に機能します。**規約が守れているかの検証にもなります。**
 
+## 9.5. toolkit化の判断（26サンプル時点）
+
+**結論: まだ切り出しません。** 第1節の方針どおりサンプルからの抽出で進めた結果、`shared/`に溜まったのは次の3つだけでした。
+
+| 抽出したもの | きっかけ | 大きさ |
+| --- | --- | --- |
+| `MRStage`（OpenXR初期化・blend mode・refresh rate・フォーカス） | 最初の分割（P1） | 中 |
+| pinch判定とポインタの出所（`MRStage`に同居） | 5サンプル目、実機の不具合 | 小 |
+| `DepthGrid`（深度画像 → 基準空間の点群） | 3サンプル目 | 小 |
+
+**26サンプル書いて、抽出物はこれだけです。** これはボトムアップ方針が失敗したのではなく、**MRTK3のような抽象（interactor / interactableの登録と調停）が要る場面が一度も来なかった**ということです。各サンプルの主題はその当たり判定そのもので、対象は数個。調停が要るのは「多数のinteractableを登録して、複数のinteractorが取り合う」段階からです。
+
+`addons/mrgt/`として切り出すのは、次のどちらかが起きてからにします。
+
+- **多数のinteractableを複数のinteractorが取り合うサンプル**が要るようになったとき（このときに初めてMRTK3の抽象が要る）
+- **他プロジェクトから`shared/`を使いたくなり、コピーではなくバージョン付きで配りたくなったとき**
+
+いまの`shared/`をそのまま`addons/`へ移しても、利用者が得るのは「コピーの代わりにaddonを入れる」だけで、中身は変わりません。**入れ物を先に作らない**という第1節の方針を、ここでも維持します。
+
 ### リポジトリ名
 
-サンプル集にするなら`MR-Godot-Template`から`MR-Godot-Samples`のような名前へ変更することを勧めます。GitHubは旧URLからリダイレクトするため、既存のリンクやcloneは壊れません。
+内容はすでに「テンプレート1本」ではなく26本のサンプル集なので、`MR-Godot-Template`から`MR-Godot-Samples`のような名前へ変えることを勧めます。GitHubは旧URLからリダイレクトするので、既存のリンクやcloneは壊れません。**リポジトリ名の変更はオーナーの操作が要るため、判断はお任せします。**
 
 ## 10. 決めたいこと
 
-1. **サンプルの単体実行**を規約に入れるか（`sample_bootstrap.gd`を作るか）。エディタでの反復が速くなる代わりに、Autoloadが1つ増えます
-2. **README再編**を今やるか、サンプルが増えてからにするか
-3. **P1の範囲**: 基礎4サンプルへの分割まで一気にやるか、まずランチャーと1サンプルだけ作って形を確認するか
-4. **リポジトリ名・説明文**: 「Template」から「Samples」寄りに変えるか（GitHub上の名前とREADMEの1行目）
+当初の4項目（単体実行の規約、README再編、P1の範囲、リポジトリ名）は、最後の1つを除いて実装で解決しました。残っているのはこれだけです。
+
+1. **リポジトリ名**: 「Template」から「Samples」寄りに変えるか（第9.5節）。オーナーの操作が要ります
+2. **PICO 4 Ultra実機での確認**: `plane_detection`が通るかどうかで、`XR_BD_*`のGDExtensionを書くかが決まります（[調査メモ](realtime_spatial_investigation.md)第3節）
+3. **Android XRの2サンプル**: 実機が無いため未検証のまま入っています。検証できる人が現れるまでこのままにするか

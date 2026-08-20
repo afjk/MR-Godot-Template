@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://samples/two_hand_manipulation/sample.gd" id="1_sample"]
+
+[sub_resource type="StandardMaterial3D" id="Material_object"]
+albedo_color = Color(0.36, 0.62, 0.9, 1)
+metallic = 0.1
+roughness = 0.32
+
+[sub_resource type="BoxMesh" id="BoxMesh_object"]
+material = SubResource("Material_object")
+size = Vector3(0.22, 0.22, 0.22)
+
+[node name="TwoHandManipulationSample" type="Node3D"]
+script = ExtResource("1_sample")
+
+[node name="Object" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, -0.55)
+mesh = SubResource("BoxMesh_object")
+
+[node name="Status" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -0.7)
+pixel_size = 0.0006
+text = ""
+font_size = 34
